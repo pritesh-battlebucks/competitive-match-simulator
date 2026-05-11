@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Battlebucks — Elo & Trophy Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Hero Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⚔️</span>
+        <span class="logo-text">Battlebucks</span>
+      </div>
+      <p class="header-sub">Match Simulator</p>
+    </div>
+  </header>
+
+  <main class="main-container">
+
+    <!-- Section Selector -->
+    <section class="section-selector">
+      <h2 class="section-title">Select Simulator Module</h2>
+      <div class="module-cards">
+        <div class="module-card active" id="card-elo">
+          <div class="module-icon">📊</div>
+          <div class="module-label">Elo & Trophies</div>
+          <div class="module-desc">Calculate rating and trophy changes after a match</div>
+          <div class="module-badge">Available</div>
+        </div>
+        <div class="module-card disabled" id="card-matchmaking">
+          <div class="module-icon">🎯</div>
+          <div class="module-label">Matchmaking</div>
+          <div class="module-desc">Simulate player matchmaking queues</div>
+          <div class="module-badge coming">Coming Soon</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Elo & Trophy Calculator -->
+    <section class="calculator-section" id="elo-section">
+
+      <!-- Step 1: Global Config -->
+      <div class="step-card" id="step-config">
+        <div class="step-header">
+          <span class="step-badge">Step 1</span>
+          <h3>Match Configuration</h3>
+        </div>
+        <div class="config-grid">
+
+          <div class="input-group">
+            <label for="kFactor">
+              K-Factor
+              <span class="tooltip-trigger" data-tip="Controls max Elo points exchanged per match. Higher = more volatile.">ⓘ</span>
+            </label>
+            <input type="number" id="kFactor" value="32" min="1" max="100" />
+          </div>
+
+          <div class="input-group">
+            <label for="scalingFactor">
+              Scaling Factor
+              <span class="tooltip-trigger" data-tip="Elo sensitivity divisor. Standard chess uses 400.">ⓘ</span>
+            </label>
+            <input type="number" id="scalingFactor" value="400" min="100" max="1000" />
+          </div>
+
+          <div class="input-group">
+            <label for="totalPlayers">
+              Total Players
+              <span class="tooltip-trigger" data-tip="Number of players in this match (2–12).">ⓘ</span>
+            </label>
+            <input type="number" id="totalPlayers" value="6" min="2" max="12" />
+          </div>
+
+        </div>
+
+        <!-- Trophy Config -->
+        <div class="trophy-config-section">
+          <div class="trophy-config-header">
+            <h4>🏆 Trophy Configuration</h4>
+            <div class="preset-btns">
+              <button class="preset-btn" id="preset2p">2-Player Preset</button>
+              <button class="preset-btn" id="preset6p">6-Player Preset</button>
+            </div>
+          </div>
+          <div class="trophy-grid">
+            <div class="trophy-col win-col">
+              <div class="trophy-col-label win-label">Win Zone (Positive)</div>
+              <div class="input-group">
+                <label for="maxPos">Max Positive <span class="hint">(underdog win, E→0)</span></label>
+                <input type="number" id="maxPos" value="40" />
+              </div>
+              <div class="input-group">
+                <label for="midPos">Mid Positive <span class="hint">(equal match, E=0.5)</span></label>
+                <input type="number" id="midPos" value="25" />
+              </div>
+              <div class="input-group">
+                <label for="lowPos">Low Positive <span class="hint">(favourite win, E→1)</span></label>
+                <input type="number" id="lowPos" value="10" />
+              </div>
+            </div>
+            <div class="trophy-divider"></div>
+            <div class="trophy-col loss-col">
+              <div class="trophy-col-label loss-label">Loss Zone (Negative)</div>
+              <div class="input-group">
+                <label for="lowNeg">Low Negative <span class="hint">(underdog loss, E→0)</span></label>
+                <input type="number" id="lowNeg" value="-10" />
+              </div>
+              <div class="input-group">
+                <label for="midNeg">Mid Negative <span class="hint">(equal loss, E=0.5)</span></label>
+                <input type="number" id="midNeg" value="-25" />
+              </div>
+              <div class="input-group">
+                <label for="maxNeg">Max Negative <span class="hint">(favourite loss, E→1)</span></label>
+                <input type="number" id="maxNeg" value="-40" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- <button class="btn-primary" id="btn-setup-players">
+          Configure Players
+          <span class="btn-arrow">→</span>
+        </button> -->
+      </div>
+
+      <!-- Step 2: Player Inputs -->
+      <div class="step-card" id="step-players">
+        <div class="step-header">
+          <span class="step-badge">Step 2</span>
+          <h3>Player Data</h3>
+          <span class="player-count-badge" id="player-count-label"></span>
+        </div>
+        <div class="players-note">
+          Enter each player's current Elo, current Trophies, and their finishing score in this match.
+          <br><span class="note-sub">Score is used to determine rank (higher score = better rank). Equal scores will share a rank.</span>
+        </div>
+        <div class="players-grid" id="players-grid"></div>
+        <div class="step-actions">
+          <button class="btn-primary" id="btn-compute">
+            <span class="btn-icon">⚡</span>
+            Compute Results
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 3: Results -->
+      <div class="step-card" id="step-results">
+        <div class="step-header">
+          <span class="step-badge">Step 3</span>
+          <h3>Match Results</h3>
+        </div>
+        <div id="results-placeholder" class="results-placeholder">
+  <p>⚡ Fill in Steps 1 & 2 above and click <strong>Compute Results</strong> to see output here.</p>
+</div>
+        <div class="results-summary" id="results-summary"></div>
+        <div class="table-wrapper">
+          <table class="results-table" id="results-table">
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Rank</th>
+                <th>Old Elo</th>
+                <th>Actual Score (S)</th>
+                <th>Expected Score (E)</th>
+                <th class="highlight-col">Elo Change</th>
+                <th>New Elo</th>
+                <th>Win Trophy</th>
+                <th>Loss Trophy</th>
+                <th>Blend</th>
+                <th class="highlight-col">Trophy Change</th>
+              </tr>
+            </thead>
+            <tbody id="results-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- Tooltip -->
+  <div class="tooltip-box" id="tooltip-box"></div>
+
+  <script src="formulas.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
