@@ -730,3 +730,82 @@ body {
   .step-actions { flex-direction: column; width: 100%; }
   .btn-primary, .btn-secondary { width: 100%; justify-content: center; }
 }
+
+/* ---- Export Actions ---- */
+.export-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+  border: 1px solid transparent;
+  font-family: var(--font);
+  letter-spacing: 0.3px;
+}
+
+.btn-copy-json {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.35);
+  color: #a78bfa;
+}
+
+.btn-copy-json:hover {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #8b5cf6;
+  transform: translateY(-1px);
+}
+
+.btn-download-pdf {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: var(--accent-gold);
+}
+
+.btn-download-pdf:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+.btn-export:active {
+  transform: translateY(0);
+}
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: #1e2d45;
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s ease;
+  pointer-events: none;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast.success { border-color: rgba(16, 185, 129, 0.5); color: #6ee7b7; }
+.toast.error   { border-color: rgba(239, 68, 68, 0.5);  color: #fca5a5; }
