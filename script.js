@@ -269,14 +269,20 @@ function renderResults(results, meta) {
     ? '<span class="tie-badge tie-partial">Partial Tie (Case A)</span>'
     : '';
 
-  resultsSummary.innerHTML = `
-    <div class="summary-chip">K-Factor <strong>${meta.eloConfig.kFactor}</strong></div>
-    <div class="summary-chip">Scaling <strong>${meta.eloConfig.scalingFactor}</strong></div>
-    <div class="summary-chip">Players <strong>${meta.totalPlayers}</strong></div>
-    <div class="summary-chip">Entry Fee <strong>${meta.entryFee.coins}C / ${meta.entryFee.gems}G / ${meta.entryFee.gg}GG</strong></div>
-    <div class="summary-chip">Total Pool <strong>${meta.totalPool.coins}C / ${meta.totalPool.gems}G / ${meta.totalPool.gg}GG</strong></div>
-    ${tieChip ? `<div class="summary-chip">${tieChip}</div>` : ''}
-  `;
+  const r0 = results[0];
+
+resultsSummary.innerHTML = `
+  <div class="summary-chip">K-Factor <strong>${meta.kFactor}</strong></div>
+  <div class="summary-chip">Scaling <strong>${meta.scalingFactor}</strong></div>
+  <div class="summary-chip">Players <strong>${meta.total}</strong></div>
+  <div class="summary-chip">Entry Fee <strong>${meta.entryFee.coins}C / ${meta.entryFee.gems}G / ${meta.entryFee.gg}GG</strong></div>
+  <div class="summary-chip">Total Pool <strong>${r0.grossPoolCoins}C / ${r0.grossPoolGems}G / ${r0.grossPoolGG}GG</strong></div>
+  <div class="summary-divider"></div>
+  <div class="summary-chip rake-chip">Gross Pool <strong>${r0.grossPoolCoins}C / ${r0.grossPoolGems}G / ${r0.grossPoolGG}GG</strong></div>
+  <div class="summary-chip rake-chip">Rake <strong>${meta.rakeConfig.coinRakePercent}% C / ${meta.rakeConfig.gemRakePercent}% G / ${meta.rakeConfig.ggRakePercent}% GG</strong></div>
+  <div class="summary-chip rake-chip">Rake Amount <strong class="val-negative">-${r0.rakeCoins}C / -${r0.rakeGems}G / -${r0.rakeGG}GG</strong></div>
+  <div class="summary-chip rake-chip">Net Pool <strong>${r0.netPoolCoins}C / ${r0.netPoolGems}G / ${r0.netPoolGG}GG</strong></div>
+`;
 
   resultsTbody.innerHTML = '';
 
@@ -328,15 +334,6 @@ function renderResults(results, meta) {
   <td class="elo-change-cell group-start">${r.poolGG > 0 ? '+'+r.poolGG : '<span class="val-zero">0</span>'}</td>
   <td class="currency-bonus">${r.bonusGG > 0 ? '+'+r.bonusGG : '<span class="val-zero">0</span>'}</td>
   <td class="currency-total">${r.totalGG > 0 ? '+'+r.totalGG : '<span class="val-zero">0</span>'}</td>
-  <td class="group-start val-zero">${r.grossPoolCoins}</td>
-<td class="val-negative">${r.rakeCoins > 0 ? '-'+r.rakeCoins : '0'}</td>
-<td>${r.netPoolCoins}</td>
-<td class="group-start val-zero">${r.grossPoolGems}</td>
-<td class="val-negative">${r.rakeGems > 0 ? '-'+r.rakeGems : '0'}</td>
-<td>${r.netPoolGems}</td>
-<td class="group-start val-zero">${r.grossPoolGG}</td>
-<td class="val-negative">${r.rakeGG > 0 ? '-'+r.rakeGG : '0'}</td>
-<td>${r.netPoolGG}</td>
 `;
     resultsTbody.appendChild(tr);
   });

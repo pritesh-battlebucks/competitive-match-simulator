@@ -415,3 +415,19 @@ body {
   .players-grid { grid-template-columns: 1fr; }
   .btn-primary { width: 100%; justify-content: center; }
 }
+
+.summary-divider {
+  width: 1px;
+  background: var(--border);
+  align-self: stretch;
+  margin: 0 4px;
+}
+
+.rake-chip {
+  background: rgba(239, 68, 68, 0.06);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.rake-chip strong {
+  color: #fca5a5;
+}
