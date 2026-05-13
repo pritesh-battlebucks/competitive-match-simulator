@@ -526,26 +526,32 @@ btnDownloadPdf.addEventListener('click', () => {
 
   const resCols = [
     { h:'Player',        k:'playerId',           w:22, align:'left'  },
-    { h:'Rank',          k:'rank',               w:10, align:'right' },
-    { h:'Status',        k:'matchStatus',        w:22, align:'left'  },
-    { h:'Old Elo',       k:'oldElo',             w:18, align:'right' },
-    { h:'Score(S)',      k:'actualScore',        w:16, align:'right' },
-    { h:'Exp(E)',        k:'expectedScore',      w:16, align:'right' },
-    { h:'Elo Change',   k:'eloDelta',           w:18, align:'right', hl:'elo'    },
-    { h:'New Elo',       k:'newElo',             w:18, align:'right' },
-    { h:'Formula Trph', k:'formulaTrophyDelta', w:18, align:'right' },
-    { h:'Trph Change',  k:'trophyDelta',        w:18, align:'right', hl:'trophy' },
-    { h:'Bonus Trph',   k:'bonusTrophies',      w:17, align:'right' },
-    { h:'Final Trph',   k:'newTrophies',        w:17, align:'right' },
-    { h:'Pool Coins',   k:'poolCoins',          w:17, align:'right' },
-    { h:'Bonus Coins',  k:'bonusCoins',         w:17, align:'right' },
-    { h:'Total Coins',  k:'totalCoins',         w:17, align:'right' },
-    { h:'Pool Gems',    k:'poolGems',           w:15, align:'right' },
-    { h:'Bonus Gems',   k:'bonusGems',          w:15, align:'right' },
-    { h:'Total Gems',   k:'totalGems',          w:15, align:'right' },
-    { h:'Pool GG',      k:'poolGG',             w:12, align:'right' },
-    { h:'Bonus GG',     k:'bonusGG',            w:12, align:'right' },
-    { h:'Total GG',     k:'totalGG',            w:12, align:'right' },
+    { h:'Rank',          k:'rank',               w:9,  align:'right' },
+    { h:'Status',        k:'matchStatus',        w:20, align:'left'  },
+    // Elo
+    { h:'Old Elo',       k:'oldElo',             w:16, align:'right' },
+    { h:'Score(S)',      k:'actualScore',        w:14, align:'right' },
+    { h:'Exp(E)',        k:'expectedScore',      w:14, align:'right' },
+    { h:'Elo Change',    k:'eloDelta',           w:16, align:'right', hl:'elo' },
+    { h:'New Elo',       k:'newElo',             w:16, align:'right' },
+    // Trophies
+    { h:'Win Trph',      k:'winTrophy',          w:14, align:'right' },
+    { h:'Loss Trph',     k:'lossTrophy',         w:14, align:'right' },
+    { h:'Formula Trph',  k:'formulaTrophyDelta', w:16, align:'right', hl:'trophy' },
+    { h:'Bonus Trph',    k:'bonusTrophies',      w:14, align:'right' },
+    { h:'Final Trph',    k:'newTrophies',        w:14, align:'right' },
+    // Coins
+    { h:'Pool Coins',    k:'poolCoins',          w:14, align:'right', hl:'pool' },
+    { h:'Bonus Coins',   k:'bonusCoins',         w:14, align:'right' },
+    { h:'Total Coins',   k:'totalCoins',         w:14, align:'right' },
+    // Gems
+    { h:'Pool Gems',     k:'poolGems',           w:13, align:'right', hl:'pool' },
+    { h:'Bonus Gems',    k:'bonusGems',          w:13, align:'right' },
+    { h:'Total Gems',    k:'totalGems',          w:13, align:'right' },
+    // GG
+    { h:'Pool GG',       k:'poolGG',             w:11, align:'right', hl:'pool' },
+    { h:'Bonus GG',      k:'bonusGG',            w:11, align:'right' },
+    { h:'Total GG',      k:'totalGG',            w:11, align:'right' },
   ];
 
   // Scale columns to fit page width
@@ -553,13 +559,17 @@ btnDownloadPdf.addEventListener('click', () => {
   const scale  = CW / totalW;
   resCols.forEach(c => { c.w = c.w * scale; });
 
-  // Header
+  // Define highlight colours for the pool columns
+  const C_hlPool = [8, 50, 30]; // dark green tint for pool columns
+
+  // Header row
   doc.setFillColor(...C.surface2); doc.rect(ML, y, CW, 8.5, 'F');
   doc.setDrawColor(...C.accent); doc.setLineWidth(0.3); doc.rect(ML, y, CW, 8.5, 'S');
   cx = ML;
   resCols.forEach(col => {
     if (col.hl === 'elo')    { doc.setFillColor(...C.hlElo);    doc.rect(cx, y, col.w, 8.5, 'F'); }
     if (col.hl === 'trophy') { doc.setFillColor(...C.hlTrophy); doc.rect(cx, y, col.w, 8.5, 'F'); }
+    if (col.hl === 'pool')   { doc.setFillColor(...C_hlPool);   doc.rect(cx, y, col.w, 8.5, 'F'); }
     sf('bold', 5.5, col.hl ? C.accent : C.muted);
     const tx = col.align === 'right' ? cx + col.w - 1.5 : cx + 1.5;
     doc.text(col.h.toUpperCase(), tx, y + 5.8, { align: col.align === 'right' ? 'right' : 'left' });
@@ -567,50 +577,63 @@ btnDownloadPdf.addEventListener('click', () => {
   });
   y += 8.5;
 
-  // Rows
+  // Data rows
   p.results.forEach((r, idx) => {
     checkY(8);
     const rh = 7.5;
     doc.setFillColor(...(idx % 2 === 0 ? C.surface : C.bg));
     doc.rect(ML, y, CW, rh, 'F');
 
-    // Highlight elo + trophy change columns
-    let ecx = ML; resCols.forEach(c => { if (c.k === 'eloDelta') { doc.setFillColor(...C.hlElo); doc.rect(ecx, y, c.w, rh, 'F'); } ecx += c.w; });
-    ecx = ML; resCols.forEach(c => { if (c.k === 'trophyDelta') { doc.setFillColor(...C.hlTrophy); doc.rect(ecx, y, c.w, rh, 'F'); } ecx += c.w; });
+    // Apply column highlights per row
+    let hcx = ML;
+    resCols.forEach(col => {
+      if (col.hl === 'elo')    { doc.setFillColor(...C.hlElo);    doc.rect(hcx, y, col.w, rh, 'F'); }
+      if (col.hl === 'trophy') { doc.setFillColor(...C.hlTrophy); doc.rect(hcx, y, col.w, rh, 'F'); }
+      if (col.hl === 'pool')   { doc.setFillColor(...C_hlPool);   doc.rect(hcx, y, col.w, rh, 'F'); }
+      hcx += col.w;
+    });
 
     cx = ML;
     resCols.forEach(col => {
       const raw = r[col.k];
       let txt = '', color = C.muted, bold = false;
 
-      if (col.k === 'playerId') { txt = String(raw); color = C.white; bold = true; }
-      else if (col.k === 'rank') {
+      if (col.k === 'playerId') {
+        txt = String(raw); color = C.white; bold = true;
+      } else if (col.k === 'rank') {
         txt = String(raw);
         color = raw === 1 ? [251,191,36] : raw === 2 ? [148,163,184] : raw === 3 ? [180,83,9] : C.muted;
         bold = true;
-      }
-      else if (col.k === 'matchStatus') {
+      } else if (col.k === 'matchStatus') {
         txt = String(raw);
         color = raw === 'COMPLETED' ? C.green : C.red;
-      }
-      else if (col.k === 'eloDelta') {
-        const v = parseFloat(raw); txt = (v > 0 ? '+' : '') + v.toFixed(2);
-        color = v > 0 ? C.green : v < 0 ? C.red : C.muted; bold = true;
-      }
-      else if (col.k === 'trophyDelta') {
+      } else if (col.k === 'eloDelta') {
         txt = (raw > 0 ? '+' : '') + raw;
         color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted; bold = true;
+      } else if (col.k === 'newElo') {
+        txt = String(raw); color = C.white; bold = true;
+      } else if (col.k === 'winTrophy') {
+        txt = '+' + parseFloat(raw).toFixed(2); color = C.green;
+      } else if (col.k === 'lossTrophy') {
+        txt = parseFloat(raw).toFixed(2); color = C.red;
+      } else if (col.k === 'formulaTrophyDelta') {
+        txt = (raw > 0 ? '+' : '') + raw;
+        color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted; bold = true;
+      } else if (col.k === 'bonusTrophies') {
+        txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? C.green : C.muted;
+      } else if (col.k === 'newTrophies') {
+        txt = String(raw); color = C.white; bold = true;
+      } else if (['poolCoins','poolGems','poolGG'].includes(col.k)) {
+        txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? C.green : C.muted;
+      } else if (['bonusCoins','bonusGems','bonusGG'].includes(col.k)) {
+        txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? [180,140,255] : C.muted;
+      } else if (['totalCoins','totalGems','totalGG'].includes(col.k)) {
+        txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? C.white : C.muted; bold = true;
+      } else if (typeof raw === 'number') {
+        txt = raw % 1 !== 0 ? raw.toFixed(4) : String(raw);
+      } else {
+        txt = String(raw);
       }
-      else if (['poolCoins','bonusCoins','totalCoins','poolGems','bonusGems','totalGems','poolGG','bonusGG','totalGG'].includes(col.k)) {
-        txt = raw > 0 ? '+' + raw : String(raw);
-        color = raw > 0 ? C.green : C.muted;
-        bold = ['totalCoins','totalGems','totalGG'].includes(col.k);
-      }
-      else if (col.k === 'newTrophies') { txt = String(raw); color = C.white; bold = true; }
-      else if (col.k === 'bonusTrophies') { txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? C.green : C.muted; }
-      else if (col.k === 'formulaTrophyDelta') { txt = (raw > 0 ? '+' : '') + raw; color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted; }
-      else if (typeof raw === 'number') { txt = raw % 1 !== 0 ? raw.toFixed(4) : String(raw); }
-      else { txt = String(raw); }
 
       sf(bold ? 'bold' : 'normal', 6, color);
       const tx = col.align === 'right' ? cx + col.w - 1.5 : cx + 1.5;
