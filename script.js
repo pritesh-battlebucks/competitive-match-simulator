@@ -1,137 +1,123 @@
 // =============================================================================
-// Battlebucks Simulator — UI Logic
+// Battlebucks Simulator v2 — UI Logic
 // =============================================================================
 
 // ---- DOM References ----
-// const btnSetupPlayers = document.getElementById('btn-setup-players');
-// const btnBackConfig   = document.getElementById('btn-back-config');
-const totalPlayersInput = document.getElementById('totalPlayers');
-const btnCompute      = document.getElementById('btn-compute');
-// const btnReset        = document.getElementById('btn-reset');
-const preset2p        = document.getElementById('preset2p');
-const preset6p        = document.getElementById('preset6p');
-const playersGrid     = document.getElementById('players-grid');
-const playerCountLabel = document.getElementById('player-count-label');
-// const stepConfig      = document.getElementById('step-config');
-// const stepPlayers     = document.getElementById('step-players');
-// const stepResults     = document.getElementById('step-results');
-const resultsTbody    = document.getElementById('results-tbody');
-const resultsSummary  = document.getElementById('results-summary');
-const tooltipBox      = document.getElementById('tooltip-box');
-const btnCopyJson    = document.getElementById('btn-copy-json');
-const btnDownloadPdf = document.getElementById('btn-download-pdf');
+const totalPlayersInput  = document.getElementById('totalPlayers');
+const playersGrid        = document.getElementById('players-grid');
+const playerCountLabel   = document.getElementById('player-count-label');
+const rankConfigLabel    = document.getElementById('rank-config-label');
+const rankConfigTbody    = document.getElementById('rank-config-tbody');
+const btnCompute         = document.getElementById('btn-compute');
+const btnCopyJson        = document.getElementById('btn-copy-json');
+const btnDownloadPdf     = document.getElementById('btn-download-pdf');
+const resultsTbody       = document.getElementById('results-tbody');
+const resultsSummary     = document.getElementById('results-summary');
+const resultsTableWrapper = document.getElementById('results-table-wrapper');
+const resultsPlaceholder = document.getElementById('results-placeholder');
+const tooltipBox         = document.getElementById('tooltip-box');
+const preset2p           = document.getElementById('preset2p');
+const preset6p           = document.getElementById('preset6p');
 
 // ---- State ----
 let currentTotalPlayers = 6;
-let lastExportPayload = null;
-buildPlayerInputs(parseInt(totalPlayersInput.value));
-totalPlayersInput.addEventListener('input', () => {
-  const total = parseInt(totalPlayersInput.value);
-  if (!isNaN(total) && total >= 2 && total <= 12) {
-    currentTotalPlayers = total;
-    buildPlayerInputs(total);
-    playerCountLabel.textContent = `${total} Players`;
-  }
-});
+let lastExportPayload   = null;
 
-// ---- Tooltip Logic ----
+// ---- Tooltip ----
 document.querySelectorAll('.tooltip-trigger').forEach(el => {
-  el.addEventListener('mouseenter', (e) => {
+  el.addEventListener('mouseenter', () => {
     tooltipBox.textContent = el.dataset.tip;
     tooltipBox.classList.add('visible');
   });
-  el.addEventListener('mousemove', (e) => {
+  el.addEventListener('mousemove', e => {
     tooltipBox.style.left = (e.clientX + 14) + 'px';
     tooltipBox.style.top  = (e.clientY - 10) + 'px';
   });
-  el.addEventListener('mouseleave', () => {
-    tooltipBox.classList.remove('visible');
-  });
+  el.addEventListener('mouseleave', () => tooltipBox.classList.remove('visible'));
 });
 
-// ---- Preset Buttons ----
+// ---- Presets ----
 preset2p.addEventListener('click', () => applyPreset({
-  maxPos: 8, midPos: 6, lowPos: 3,
-  lowNeg: -2, midNeg: -4, maxNeg: -6
+  maxPos:6, midPos:4, lowPos:2, lowNeg:-2, midNeg:-4, maxNeg:-6, tie:3
 }));
-
 preset6p.addEventListener('click', () => applyPreset({
-  maxPos: 40, midPos: 25, lowPos: 10,
-  lowNeg: -10, midNeg: -25, maxNeg: -40
+  maxPos:40, midPos:25, lowPos:10, lowNeg:-10, midNeg:-25, maxNeg:-40, tie:5
 }));
 
-function applyPreset(config) {
-  document.getElementById('maxPos').value = config.maxPos;
-  document.getElementById('midPos').value = config.midPos;
-  document.getElementById('lowPos').value = config.lowPos;
-  document.getElementById('lowNeg').value = config.lowNeg;
-  document.getElementById('midNeg').value = config.midNeg;
-  document.getElementById('maxNeg').value = config.maxNeg;
-
-  // Pulse animation on trophy inputs
-  ['maxPos','midPos','lowPos','lowNeg','midNeg','maxNeg'].forEach(id => {
+function applyPreset(c) {
+  const fields = { maxPos:'maxPos', midPos:'midPos', lowPos:'lowPos',
+                   lowNeg:'lowNeg', midNeg:'midNeg', maxNeg:'maxNeg', tie:'tieTrophies' };
+  Object.entries(fields).forEach(([k, id]) => {
     const el = document.getElementById(id);
-    el.style.transition = 'border-color 0.1s';
+    el.value = c[k];
     el.style.borderColor = '#f59e0b';
     setTimeout(() => { el.style.borderColor = ''; }, 600);
   });
 }
 
-// ---- Step 1 → Step 2: Build Player Inputs ----
-// btnSetupPlayers.addEventListener('click', () => {
-//   const total = parseInt(document.getElementById('totalPlayers').value);
+// ---- Build Rank Config Table ----
+function buildRankConfigTable(total) {
+  rankConfigLabel.textContent = `${total} Ranks`;
+  rankConfigTbody.innerHTML = '';
 
-//   if (isNaN(total) || total < 2 || total > 12) {
-//     showError(stepConfig, 'Total Players must be between 2 and 12.');
-//     return;
-//   }
+  const defaults = [
+    { coinSharePercent:50, gemSharePercent:50, ggSharePercent:50, bonusCoins:100, bonusGems:10, bonusGG:5,  bonusTrophies:20 },
+    { coinSharePercent:30, gemSharePercent:30, ggSharePercent:50, bonusCoins:50,  bonusGems:5,  bonusGG:2,  bonusTrophies:10 },
+    { coinSharePercent:20, gemSharePercent:20, ggSharePercent:0,  bonusCoins:0,   bonusGems:0,  bonusGG:0,  bonusTrophies:0  },
+  ];
 
-//   clearErrors();
-//   currentTotalPlayers = total;
-//   buildPlayerInputs(total);
-
-//   stepConfig.classList.add('hidden');
-//   stepPlayers.classList.remove('hidden');
-//   stepPlayers.classList.add('animate-in');
-//   window.scrollTo({ top: stepPlayers.offsetTop - 80, behavior: 'smooth' });
-// });
-
-// ---- Step 2 → Step 1: Back ----
-// btnBackConfig.addEventListener('click', () => {
-//   stepPlayers.classList.add('hidden');
-//   stepConfig.classList.remove('hidden');
-//   stepConfig.classList.add('animate-in');
-//   window.scrollTo({ top: 0, behavior: 'smooth' });
-// });
+  for (let r = 1; r <= total; r++) {
+    const def = defaults[r - 1] || { coinSharePercent:0, gemSharePercent:0, ggSharePercent:0, bonusCoins:0, bonusGems:0, bonusGG:0, bonusTrophies:0 };
+    const rankClass = r === 1 ? 'rank-label-1' : r === 2 ? 'rank-label-2' : r === 3 ? 'rank-label-3' : '';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="rank-label-cell ${rankClass}">#${r}</td>
+      <td><input type="number" id="rc_coinPct_${r}"   value="${def.coinSharePercent}"  min="0" max="100"/></td>
+      <td><input type="number" id="rc_gemPct_${r}"    value="${def.gemSharePercent}"   min="0" max="100"/></td>
+      <td><input type="number" id="rc_ggPct_${r}"     value="${def.ggSharePercent}"    min="0" max="100"/></td>
+      <td><input type="number" id="rc_bCoins_${r}"    value="${def.bonusCoins}"        min="0"/></td>
+      <td><input type="number" id="rc_bGems_${r}"     value="${def.bonusGems}"         min="0"/></td>
+      <td><input type="number" id="rc_bGG_${r}"       value="${def.bonusGG}"           min="0"/></td>
+      <td><input type="number" id="rc_bTrophies_${r}" value="${def.bonusTrophies}"     min="0"/></td>
+    `;
+    rankConfigTbody.appendChild(tr);
+  }
+}
 
 // ---- Build Player Input Cards ----
 function buildPlayerInputs(total) {
   playersGrid.innerHTML = '';
   playerCountLabel.textContent = `${total} Players`;
 
+  const statusOptions = ['COMPLETED','ABANDONED','FORFEITED'];
+
   for (let i = 1; i <= total; i++) {
-    const initials = `P${i}`;
     const card = document.createElement('div');
-    card.className = 'player-card';
-    card.style.animationDelay = `${(i - 1) * 0.05}s`;
-    card.classList.add('animate-in');
+    card.className = 'player-card animate-in';
+    card.style.animationDelay = `${(i-1)*0.04}s`;
     card.innerHTML = `
       <div class="player-card-header">
-        <div class="player-avatar">${initials}</div>
+        <div class="player-avatar">P${i}</div>
         <div class="player-name">Player ${i}</div>
       </div>
       <div class="player-fields">
         <div class="input-group">
           <label>Current Elo</label>
-          <input type="number" id="elo-${i}" value="1500" min="0" max="10000" placeholder="e.g. 1500" />
+          <input type="number" id="elo-${i}" value="${1500 + (i-1)*50}" min="0"/>
         </div>
         <div class="input-group">
           <label>Current Trophies</label>
-          <input type="number" id="trophies-${i}" value="800" min="0" placeholder="e.g. 800" />
+          <input type="number" id="trophies-${i}" value="800" min="0"/>
         </div>
         <div class="input-group">
-          <label>Match Score <span class="hint">(higher = better finish)</span></label>
-          <input type="number" id="score-${i}" value="${Math.max(1, total - i + 1) * 10}" min="0" step="any" placeholder="e.g. 100" />
+          <label>Match Score</label>
+          <input type="number" id="score-${i}" value="${Math.max(10, 70 - (i-1)*10)}" min="0" step="any"/>
+        </div>
+        <div class="input-group">
+          <label>Match Status</label>
+          <select id="status-${i}">
+            ${statusOptions.map(s => `<option value="${s}"${s==='COMPLETED'?' selected':''}>${s}</option>`).join('')}
+          </select>
         </div>
       </div>
     `;
@@ -139,641 +125,585 @@ function buildPlayerInputs(total) {
   }
 }
 
-// ---- Step 2 → Step 3: Compute ----
-btnCompute.addEventListener('click', () => {
-  clearErrors();
+// ---- Init & Reactivity ----
+buildRankConfigTable(parseInt(totalPlayersInput.value));
+buildPlayerInputs(parseInt(totalPlayersInput.value));
 
-  const kFactor       = parseFloat(document.getElementById('kFactor').value);
-  const scalingFactor = parseFloat(document.getElementById('scalingFactor').value);
-  const total         = currentTotalPlayers;
+totalPlayersInput.addEventListener('input', () => {
+  const total = parseInt(totalPlayersInput.value);
+  if (!isNaN(total) && total >= 2 && total <= 12) {
+    currentTotalPlayers = total;
+    buildRankConfigTable(total);
+    buildPlayerInputs(total);
+  }
+});
 
-  const trophyConfig = {
-    maxPos: parseFloat(document.getElementById('maxPos').value),
-    midPos: parseFloat(document.getElementById('midPos').value),
-    lowPos: parseFloat(document.getElementById('lowPos').value),
-    lowNeg: parseFloat(document.getElementById('lowNeg').value),
-    midNeg: parseFloat(document.getElementById('midNeg').value),
-    maxNeg: parseFloat(document.getElementById('maxNeg').value),
+// ---- Read Config from UI ----
+function readConfig() {
+  const total = currentTotalPlayers;
+
+  const eloConfig = {
+    kFactor:       parseFloat(document.getElementById('kFactor').value),
+    scalingFactor: parseFloat(document.getElementById('scalingFactor').value),
+    strategy:      document.getElementById('eloStrategy').value,
+    roundMode:     document.getElementById('eloRoundMode').value,
   };
 
-  // Validate
-  if ([kFactor, scalingFactor, ...Object.values(trophyConfig)].some(isNaN)) {
-    showError(stepPlayers, '⚠ Please fill all configuration fields with valid numbers.');
-    return;
+  const trophyConfig = {
+    winZone: {
+      maxPositive: parseFloat(document.getElementById('maxPos').value),
+      midPositive: parseFloat(document.getElementById('midPos').value),
+      lowPositive: parseFloat(document.getElementById('lowPos').value),
+    },
+    lossZone: {
+      lowNegative: parseFloat(document.getElementById('lowNeg').value),
+      midNegative: parseFloat(document.getElementById('midNeg').value),
+      maxNegative: parseFloat(document.getElementById('maxNeg').value),
+    },
+    tieTrophies: parseFloat(document.getElementById('tieTrophies').value),
+    strategy:    document.getElementById('trophyStrategy').value,
+    roundMode:   document.getElementById('trophyRoundMode').value,
+  };
+
+  const rankConfig = [];
+  for (let r = 1; r <= total; r++) {
+    rankConfig.push({
+      rank:              r,
+      coinSharePercent:  parseFloat(document.getElementById(`rc_coinPct_${r}`).value)   || 0,
+      gemSharePercent:   parseFloat(document.getElementById(`rc_gemPct_${r}`).value)    || 0,
+      ggSharePercent:    parseFloat(document.getElementById(`rc_ggPct_${r}`).value)     || 0,
+      bonusCoins:        parseFloat(document.getElementById(`rc_bCoins_${r}`).value)    || 0,
+      bonusGems:         parseFloat(document.getElementById(`rc_bGems_${r}`).value)     || 0,
+      bonusGG:           parseFloat(document.getElementById(`rc_bGG_${r}`).value)       || 0,
+      bonusTrophies:     parseFloat(document.getElementById(`rc_bTrophies_${r}`).value) || 0,
+    });
   }
 
-  // Collect player data
-  const rawPlayers = [];
-  let valid = true;
+  const entryFee = {
+    coins: parseFloat(document.getElementById('entryCoins').value) || 0,
+    gems:  parseFloat(document.getElementById('entryGems').value)  || 0,
+    gg:    parseFloat(document.getElementById('entryGG').value)    || 0,
+  };
 
+  return { eloConfig, trophyConfig, rankConfig, entryFee };
+}
+
+// ---- Read Player Inputs from UI ----
+function readPlayerInputs(total) {
+  const players = [];
   for (let i = 1; i <= total; i++) {
     const elo      = parseFloat(document.getElementById(`elo-${i}`).value);
     const trophies = parseFloat(document.getElementById(`trophies-${i}`).value);
     const score    = parseFloat(document.getElementById(`score-${i}`).value);
+    const status   = document.getElementById(`status-${i}`).value;
 
-    if (isNaN(elo) || isNaN(trophies) || isNaN(score)) {
-      showError(stepPlayers, `⚠ Player ${i} has missing or invalid values.`);
-      valid = false;
-      break;
-    }
+    if (isNaN(elo) || isNaN(trophies) || isNaN(score)) return null;
 
-    rawPlayers.push({
-      playerId: `Player ${i}`,
-      currentElo: elo,
+    players.push({
+      playerId:        `Player ${i}`,
+      currentElo:      elo,
       currentTrophies: trophies,
-      matchScore: score,
+      matchScore:      score,
+      matchStatus:     status,
     });
   }
+  return players;
+}
 
-  if (!valid) return;
+// ---- Compute ----
+btnCompute.addEventListener('click', () => {
+  clearErrors();
+  const total = currentTotalPlayers;
+  const { eloConfig, trophyConfig, rankConfig, entryFee } = readConfig();
+  const playerInputs = readPlayerInputs(total);
 
-  // Assign ranks based on match score (descending) — higher score = rank 1
-  const sorted = [...rawPlayers].sort((a, b) => b.matchScore - a.matchScore);
-
-  // Handle ties: same score = same rank
-  let rank = 1;
-  for (let i = 0; i < sorted.length; i++) {
-    if (i > 0 && sorted[i].matchScore === sorted[i - 1].matchScore) {
-      sorted[i].rank = sorted[i - 1].rank;
-    } else {
-      sorted[i].rank = rank;
-    }
-    rank++;
-  }
-
-  // Build MatchPlayer array (with rank)
-  const matchPlayers = sorted.map(p => ({
-    playerId: p.playerId,
-    currentElo: p.currentElo,
-    currentTrophies: p.currentTrophies,
-    rank: p.rank,
-    matchScore: p.matchScore,
-  }));
-
-  // Run formula
-  let results;
-  try {
-    results = resolveMatch(matchPlayers, trophyConfig, kFactor, scalingFactor);
-  } catch (err) {
-    showError(stepPlayers, `⚠ Calculation error: ${err.message}`);
+  if (!playerInputs) {
+    showError('One or more players have invalid or missing values.');
     return;
   }
 
-  // Merge rank into results (results come back in same order as matchPlayers)
-  results.forEach((r, idx) => {
-    r.rank = matchPlayers[idx].rank;
-    r.matchScore = matchPlayers[idx].matchScore;
-  });
+  const gameModeConfig = { eloConfig, trophyConfig, rankConfig };
 
-  const meta = { kFactor, scalingFactor, total, trophyConfig, matchPlayers };
-  // Results are already sorted by score (descending) since we sorted matchPlayers
-  renderResults(results, meta);
-  lastExportPayload = buildExportPayload(meta, results);
+  let results;
+  try {
+    results = resolveMatch(playerInputs, gameModeConfig, entryFee);
+  } catch (err) {
+    showError('Calculation error: ' + err.message);
+    return;
+  }
 
-//   stepPlayers.classList.add('hidden');
-//   stepResults.classList.remove('hidden');
-//   stepResults.classList.add('animate-in');
-//   window.scrollTo({ top: stepResults.offsetTop - 80, behavior: 'smooth' });
-const placeholder = document.getElementById('results-placeholder');
-if (placeholder) placeholder.style.display = 'none';
-renderResults(results, { kFactor, scalingFactor, total, trophyConfig });
-window.scrollTo({ top: document.getElementById('step-results').offsetTop - 80, behavior: 'smooth' });
+  // Sort results for display: by rank asc
+  const displayResults = [...results].sort((a, b) => a.rank - b.rank);
+
+  // Detect tie type for display
+  const fullTie    = isFullTie(playerInputs);
+  const partialTie = !fullTie && displayResults.some((r, _, arr) =>
+    arr.filter(x => x.rank === r.rank).length > 1
+  );
+
+  const meta = {
+    eloConfig, trophyConfig, rankConfig, entryFee,
+    totalPlayers: total,
+    fullTie, partialTie,
+    totalPool: { coins: entryFee.coins * total, gems: entryFee.gems * total, gg: entryFee.gg * total },
+  };
+
+  renderResults(displayResults, meta);
+  lastExportPayload = buildExportPayload(meta, playerInputs, results);
 });
 
 // ---- Render Results ----
 function renderResults(results, meta) {
+  resultsPlaceholder.style.display = 'none';
+  resultsTableWrapper.style.display = 'block';
+
   // Summary chips
+  const tieChip = meta.fullTie
+    ? '<span class="tie-badge tie-full">Full Tie (Case B)</span>'
+    : meta.partialTie
+    ? '<span class="tie-badge tie-partial">Partial Tie (Case A)</span>'
+    : '';
+
   resultsSummary.innerHTML = `
-    <div class="summary-chip">⚡ K-Factor <strong>${meta.kFactor}</strong></div>
-    <div class="summary-chip">📐 Scaling <strong>${meta.scalingFactor}</strong></div>
-    <div class="summary-chip">👥 Players <strong>${meta.total}</strong></div>
-    <div class="summary-chip">🏆 Max Win Trophy <strong>+${meta.trophyConfig.maxPos}</strong></div>
-    <div class="summary-chip">💀 Max Loss Trophy <strong>${meta.trophyConfig.maxNeg}</strong></div>
+    <div class="summary-chip">K-Factor <strong>${meta.eloConfig.kFactor}</strong></div>
+    <div class="summary-chip">Scaling <strong>${meta.eloConfig.scalingFactor}</strong></div>
+    <div class="summary-chip">Players <strong>${meta.totalPlayers}</strong></div>
+    <div class="summary-chip">Entry Fee <strong>${meta.entryFee.coins}C / ${meta.entryFee.gems}G / ${meta.entryFee.gg}GG</strong></div>
+    <div class="summary-chip">Total Pool <strong>${meta.totalPool.coins}C / ${meta.totalPool.gems}G / ${meta.totalPool.gg}GG</strong></div>
+    ${tieChip ? `<div class="summary-chip">${tieChip}</div>` : ''}
   `;
 
-  // Table rows
   resultsTbody.innerHTML = '';
 
   results.forEach((r, idx) => {
-    const delay = idx * 0.06;
     const tr = document.createElement('tr');
-    tr.style.animationDelay = `${delay}s`;
+    tr.style.animationDelay = `${idx * 0.05}s`;
 
-    // Elo change styling
-    const eloDelta    = r.eloDelta;
-    const eloFormatted = formatDelta(eloDelta, 2);
-    const eloClass    = eloDelta > 0 ? 'val-positive' : eloDelta < 0 ? 'val-negative' : 'val-neutral';
-
-    // Trophy change styling
-    const trophyDelta     = r.trophyDelta;
-    const trophyFormatted = formatDelta(trophyDelta, 0);
-    const trophyClass     = trophyDelta > 0 ? 'val-positive' : trophyDelta < 0 ? 'val-negative' : 'val-neutral';
-
-    // Rank styling
     const rankClass = r.rank === 1 ? 'rank-1' : r.rank === 2 ? 'rank-2' : r.rank === 3 ? 'rank-3' : '';
-    const rankEmoji = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : '';
+    const rankEmoji = r.rank === 1 ? '1st' : r.rank === 2 ? '2nd' : r.rank === 3 ? '3rd' : `${r.rank}th`;
 
-    // Player initials for avatar
-    const pidNum = r.playerId.replace('Player ', '');
-    const blend  = r.lossTrophy + r.actualScore * (r.winTrophy - r.lossTrophy);
+    const statusKey = (r.matchStatus || '').toUpperCase();
+    const statusClass = statusKey === 'COMPLETED' ? 'status-completed'
+                      : statusKey === 'FORFEITED'  ? 'status-forfeited'
+                      : statusKey === 'ABANDONED'  ? 'status-abandoned' : 'status-other';
+
+    const eloSign  = r.eloDelta > 0 ? '+' : '';
+    const eloClass = r.eloDelta > 0 ? 'val-positive' : r.eloDelta < 0 ? 'val-negative' : 'val-neutral';
+
+    const tDelta = r.trophyDelta;
+    const tClass = tDelta > 0 ? 'val-positive' : tDelta < 0 ? 'val-negative' : 'val-neutral';
+    const tSign  = tDelta > 0 ? '+' : '';
+
+    function c(val, decimals = 0) {
+      if (val === 0) return '<span class="val-zero">0</span>';
+      const n = decimals > 0 ? parseFloat(val).toFixed(decimals) : val;
+      return val > 0 ? `<span class="val-positive">+${n}</span>` : `<span class="val-negative">${n}</span>`;
+    }
 
     tr.innerHTML = `
-      <td>
-        <div class="player-cell">
-          <div class="p-avatar">${pidNum}</div>
-          <span class="p-name">${r.playerId}</span>
-        </div>
-      </td>
-      <td class="rank-cell ${rankClass}">${rankEmoji} ${r.rank}</td>
-      <td><strong>${r.oldElo.toFixed(0)}</strong></td>
-      <td>${r.actualScore.toFixed(4)}</td>
-      <td>${r.expectedScore.toFixed(4)}</td>
-      <td class="elo-change-cell"><span class="${eloClass}">${eloFormatted}</span></td>
-      <td><strong>${r.newElo.toFixed(2)}</strong></td>
-      <td><span class="val-positive">+${r.winTrophy.toFixed(2)}</span></td>
-      <td><span class="val-negative">${r.lossTrophy.toFixed(2)}</span></td>
-      <td>${blend.toFixed(2)}</td>
-      <td class="trophy-change-cell"><span class="${trophyClass}">${trophyFormatted}</span></td>
-    `;
-
+  <td><div class="player-cell"><div class="p-avatar">${r.playerId.replace('Player ','')}</div><span class="p-name">${r.playerId}</span></div></td>
+  <td class="rank-cell ${rankClass}">${rankEmoji}</td>
+  <td><span class="status-chip ${statusClass}">${r.matchStatus}</span></td>
+  <td>${r.oldElo}</td>
+  <td>${r.actualScore.toFixed(4)}</td>
+  <td>${r.expectedScore.toFixed(4)}</td>
+  <td class="elo-change-cell group-start"><span class="${eloClass}">${eloSign}${r.eloDelta}</span></td>
+  <td><strong>${r.newElo}</strong></td>
+  <td class="group-start"><span class="val-positive">+${r.winTrophy.toFixed(2)}</span></td>
+  <td><span class="val-negative">${r.lossTrophy.toFixed(2)}</span></td>
+  <td class="trophy-change-cell"><span class="${tClass}">${tSign}${tDelta}</span></td>
+  <td>${r.bonusTrophies > 0 ? `<span class="val-positive">+${r.bonusTrophies}</span>` : '<span class="val-zero">0</span>'}</td>
+  <td><strong class="${r.newTrophies > r.oldTrophies ? 'val-positive' : r.newTrophies < r.oldTrophies ? 'val-negative' : ''}">${r.newTrophies}</strong></td>
+  <td class="elo-change-cell group-start">${r.poolCoins > 0 ? '+'+r.poolCoins : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-bonus">${r.bonusCoins > 0 ? '+'+r.bonusCoins : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-total">${r.totalCoins > 0 ? '+'+r.totalCoins : '<span class="val-zero">0</span>'}</td>
+  <td class="elo-change-cell group-start">${r.poolGems > 0 ? '+'+r.poolGems : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-bonus">${r.bonusGems > 0 ? '+'+r.bonusGems : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-total">${r.totalGems > 0 ? '+'+r.totalGems : '<span class="val-zero">0</span>'}</td>
+  <td class="elo-change-cell group-start">${r.poolGG > 0 ? '+'+r.poolGG : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-bonus">${r.bonusGG > 0 ? '+'+r.bonusGG : '<span class="val-zero">0</span>'}</td>
+  <td class="currency-total">${r.totalGG > 0 ? '+'+r.totalGG : '<span class="val-zero">0</span>'}</td>
+`;
     resultsTbody.appendChild(tr);
   });
 }
 
-// ---- Reset ----
-// btnReset.addEventListener('click', () => {
-//   stepResults.classList.add('hidden');
-//   stepConfig.classList.remove('hidden');
-//   stepConfig.classList.add('animate-in');
-//   clearErrors();
-//   window.scrollTo({ top: 0, behavior: 'smooth' });
-// });
-
-// ---- Helpers ----
-function formatDelta(value, decimals) {
-  const rounded = parseFloat(value.toFixed(decimals));
-  return rounded > 0 ? `+${rounded}` : `${rounded}`;
-}
-
-function showError(container, msg) {
-  clearErrors();
-  const div = document.createElement('div');
-  div.className = 'error-msg';
-  div.id = 'active-error';
-  div.textContent = msg;
-  container.insertBefore(div, container.querySelector('.step-actions') || container.firstChild.nextSibling);
-}
-
-function clearErrors() {
-  const existing = document.getElementById('active-error');
-  if (existing) existing.remove();
-}
-
 // ---- Build Export Payload ----
-function buildExportPayload(meta, results) {
+function buildExportPayload(meta, playerInputs, results) {
   return {
     simulation: {
       generatedAt: new Date().toISOString(),
-      platform: "Battlebucks Match Simulator"
+      platform: 'Battlebucks Match Simulator v2',
+      tieType: meta.fullTie ? 'FULL_TIE' : meta.partialTie ? 'PARTIAL_TIE' : 'NONE',
     },
     configuration: {
-      kFactor: meta.kFactor,
-      scalingFactor: meta.scalingFactor,
-      totalPlayers: meta.total,
-      trophyConfig: {
-        winZone: {
-          maxPositive: meta.trophyConfig.maxPos,
-          midPositive: meta.trophyConfig.midPos,
-          lowPositive: meta.trophyConfig.lowPos
-        },
-        lossZone: {
-          lowNegative: meta.trophyConfig.lowNeg,
-          midNegative: meta.trophyConfig.midNeg,
-          maxNegative: meta.trophyConfig.maxNeg
-        }
-      }
+      eloConfig: meta.eloConfig,
+      trophyConfig: meta.trophyConfig,
+      rankConfig: meta.rankConfig,
+      entryFee: meta.entryFee,
+      totalPool: meta.totalPool,
     },
-    playerInputs: meta.matchPlayers.map(p => ({
-      playerId:         p.playerId,
-      currentElo:       p.currentElo,
-      currentTrophies:  p.currentTrophies,
-      matchScore:       p.matchScore,
-      assignedRank:     p.rank
+    playerInputs: playerInputs.map(p => ({
+      playerId:        p.playerId,
+      currentElo:      p.currentElo,
+      currentTrophies: p.currentTrophies,
+      matchScore:      p.matchScore,
+      matchStatus:     p.matchStatus,
     })),
     results: results.map(r => ({
-      playerId:          r.playerId,
-      rank:              r.rank,
-      oldElo:            parseFloat(r.oldElo.toFixed(4)),
-      actualScore:       parseFloat(r.actualScore.toFixed(4)),
-      expectedScore:     parseFloat(r.expectedScore.toFixed(4)),
-      eloRatingChange:   parseFloat(r.eloDelta.toFixed(4)),
-      newElo:            parseFloat(r.newElo.toFixed(4)),
-      winTrophy:         parseFloat(r.winTrophy.toFixed(4)),
-      lossTrophy:        parseFloat(r.lossTrophy.toFixed(4)),
-      blend:             parseFloat((r.lossTrophy + r.actualScore * (r.winTrophy - r.lossTrophy)).toFixed(4)),
-      trophyChange:      r.trophyDelta,
-      oldTrophies:       r.oldTrophies,
-      newTrophies:       r.newTrophies
-    }))
+      playerId:           r.playerId,
+      matchStatus:        r.matchStatus,
+      rank:               r.rank,
+      oldElo:             parseFloat(r.oldElo.toFixed(4)),
+      actualScore:        parseFloat(r.actualScore.toFixed(4)),
+      expectedScore:      parseFloat(r.expectedScore.toFixed(4)),
+      eloDelta:           parseFloat(r.eloDelta.toFixed(4)),
+      newElo:             parseFloat(r.newElo.toFixed(4)),
+      winTrophy:          parseFloat(r.winTrophy.toFixed(4)),
+      lossTrophy:         parseFloat(r.lossTrophy.toFixed(4)),
+      formulaTrophyDelta: r.formulaTrophyDelta,
+      bonusTrophies:      r.bonusTrophies,
+      newTrophies:        r.newTrophies,
+      poolCoins:          r.poolCoins,
+      bonusCoins:         r.bonusCoins,
+      totalCoins:         r.totalCoins,
+      poolGems:           r.poolGems,
+      bonusGems:          r.bonusGems,
+      totalGems:          r.totalGems,
+      poolGG:             r.poolGG,
+      bonusGG:            r.bonusGG,
+      totalGG:            r.totalGG,
+    })),
   };
 }
 
 // ---- Copy JSON ----
 btnCopyJson.addEventListener('click', () => {
-  if (!lastExportPayload) {
-    showToast('No results to copy. Compute first.', 'error');
-    return;
-  }
+  if (!lastExportPayload) { showToast('No results yet. Click Compute first.', 'error'); return; }
   const json = JSON.stringify(lastExportPayload, null, 2);
   navigator.clipboard.writeText(json)
     .then(() => showToast('JSON copied to clipboard!', 'success'))
     .catch(() => {
-      // Fallback for restricted environments
       const ta = document.createElement('textarea');
-      ta.value = json;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      ta.value = json; ta.style.cssText = 'position:fixed;opacity:0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
       showToast('JSON copied to clipboard!', 'success');
     });
 });
 
 // ---- Download PDF ----
 btnDownloadPdf.addEventListener('click', () => {
-  if (!lastExportPayload) {
-    showToast('No results to export. Compute first.', 'error');
-    return;
-  }
+  if (!lastExportPayload) { showToast('No results yet. Click Compute first.', 'error'); return; }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-  const PW = 210, PH = 297;
-  const ML = 15, MR = 15, MT = 15;
+  const PW = 297, PH = 210, ML = 12, MR = 12, MT = 12;
   const CW = PW - ML - MR;
   let y = MT;
 
   const C = {
-    bg:       [10,  12,  20],
-    surface:  [17,  24,  39],
-    surface2: [26,  35,  52],
-    border:   [30,  45,  69],
-    accent:   [59, 130, 246],
-    gold:     [245,158, 11],
-    green:    [16, 185, 129],
-    red:      [239, 68,  68],
-    white:    [241,245, 249],
-    muted:    [148,163, 184],
-    faint:    [71,  85, 105],
-    hlElo:    [20,  40,  80],
-    hlTrophy: [60,  40,   8]
+    bg:[10,12,20], surface:[17,24,39], surface2:[26,35,52], border:[30,45,69],
+    accent:[59,130,246], gold:[245,158,11], green:[16,185,129], red:[239,68,68],
+    white:[241,245,249], muted:[148,163,184], faint:[71,85,105],
+    hlElo:[20,40,80], hlTrophy:[60,40,8], purple:[100,70,180],
   };
 
-  const payload = lastExportPayload;
+  const p = lastExportPayload;
 
-  // ---- helpers ----
-  function fillPage() {
-    doc.setFillColor(...C.bg);
-    doc.rect(0, 0, PW, PH, 'F');
-  }
-
-  function newPage() {
-    doc.addPage();
-    fillPage();
-    y = MT;
-  }
-
-  function checkY(needed) {
-    if (y + needed > PH - 15) newPage();
-  }
-
-  function setFont(style, size, color) {
+  function fillPage() { doc.setFillColor(...C.bg); doc.rect(0,0,PW,PH,'F'); }
+  function newPage() { doc.addPage(); fillPage(); y = MT; }
+  function checkY(n) { if (y + n > PH - 12) newPage(); }
+  function sf(style, size, color) {
     doc.setFont('helvetica', style || 'normal');
-    doc.setFontSize(size || 10);
+    doc.setFontSize(size || 9);
     doc.setTextColor(...(color || C.white));
   }
-
-  function labelValue(label, value, lx, vx, row_y, lColor, vColor) {
-    setFont('bold', 8, lColor || C.muted);
-    doc.text(label, lx, row_y);
-    setFont('normal', 9, vColor || C.white);
-    doc.text(String(value), vx, row_y);
-  }
-
-  function sectionHeading(title, icon_text) {
+  function sectionHeading(title) {
     checkY(14);
-    // Accent bar
-    doc.setFillColor(...C.accent);
-    doc.rect(ML, y, 3, 8, 'F');
-    setFont('bold', 13, C.white);
-    doc.text((icon_text ? icon_text + '  ' : '') + title, ML + 6, y + 6);
-    y += 12;
-    // Divider
-    doc.setDrawColor(...C.border);
-    doc.setLineWidth(0.3);
-    doc.line(ML, y, ML + CW, y);
-    y += 5;
+    doc.setFillColor(...C.accent); doc.rect(ML, y, 3, 8, 'F');
+    sf('bold', 12, C.white); doc.text(title, ML + 6, y + 6);
+    y += 11;
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3);
+    doc.line(ML, y, ML + CW, y); y += 5;
   }
 
-  function pill(text, px, py, bgColor, textColor) {
-    const w = doc.getTextWidth(text) + 6;
-    doc.setFillColor(...bgColor);
-    doc.roundedRect(px, py - 4, w, 5.5, 1, 1, 'F');
-    setFont('bold', 7, textColor);
-    doc.text(text, px + 3, py);
-    return w;
-  }
-
-  // ============================
-  // PAGE 1 — HEADER + CONFIG
-  // ============================
+  // ── PAGE 1: Header + Config ──────────────────────────────────────────────
   fillPage();
 
   // Header band
-  doc.setFillColor(...C.surface);
-  doc.rect(0, 0, PW, 32, 'F');
-  doc.setFillColor(...C.accent);
-  doc.rect(0, 32, PW, 0.8, 'F');
+  doc.setFillColor(...C.surface); doc.rect(0, 0, PW, 28, 'F');
+  doc.setFillColor(...C.accent);  doc.rect(0, 28, PW, 0.8, 'F');
+  sf('bold', 18, C.white); doc.text('BATTLEBUCKS', ML, 12);
+  sf('normal', 9, C.muted); doc.text('Match Simulator v2  |  Elo & Trophy Calculation Report', ML, 19);
+  const dateStr = new Date(p.simulation.generatedAt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' });
+  sf('normal', 8, C.faint); doc.text('Generated: ' + dateStr, PW - MR, 19, { align:'right' });
+  if (p.simulation.tieType !== 'NONE') {
+    const tieLabel = p.simulation.tieType === 'FULL_TIE' ? 'FULL TIE (Case B)' : 'PARTIAL TIE (Case A)';
+    sf('bold', 8, p.simulation.tieType === 'FULL_TIE' ? C.gold : C.accent);
+    doc.text(tieLabel, PW - MR, 12, { align:'right' });
+  }
+  y = 36;
 
-  setFont('bold', 20, C.white);
-  doc.text('BATTLEBUCKS', ML, 14);
-  setFont('normal', 9, C.muted);
-  doc.text('Match Simulator  |  Elo & Trophy Calculation Report', ML, 21);
-
-  // Date + generator
-  const dateStr = new Date(payload.simulation.generatedAt).toLocaleString('en-IN', {
-    dateStyle: 'medium', timeStyle: 'short'
-  });
-  setFont('normal', 8, C.faint);
-  doc.text('Generated: ' + dateStr, PW - MR, 21, { align: 'right' });
-
-  y = 42;
-
-  // ---- Match Configuration ----
   sectionHeading('Match Configuration');
 
-  // Config pills row
-  const configs = [
-    { label: 'K-Factor',       value: String(payload.configuration.kFactor) },
-    { label: 'Scaling Factor', value: String(payload.configuration.scalingFactor) },
-    { label: 'Total Players',  value: String(payload.configuration.totalPlayers) },
+  // Elo + Trophy config pills
+  const cfg = p.configuration;
+  const cfgItems = [
+    ['K-Factor', String(cfg.eloConfig.kFactor)],
+    ['Scaling Factor', String(cfg.eloConfig.scalingFactor)],
+    ['Total Players', String(p.playerInputs.length)],
+    ['Elo Strategy', cfg.eloConfig.strategy],
+    ['Trophy Strategy', cfg.trophyConfig.strategy],
+    ['Elo Round Mode', cfg.eloConfig.roundMode],
+    ['Trophy Round Mode', cfg.trophyConfig.roundMode],
+    ['Tie Trophies', String(cfg.trophyConfig.tieTrophies)],
+    ['Entry Fee', `${cfg.entryFee.coins}C / ${cfg.entryFee.gems}G / ${cfg.entryFee.gg}GG`],
+    ['Total Pool', `${cfg.totalPool.coins}C / ${cfg.totalPool.gems}G / ${cfg.totalPool.gg}GG`],
   ];
-
-  configs.forEach((c, i) => {
-    const bx = ML + i * 60;
-    doc.setFillColor(...C.surface2);
-    doc.roundedRect(bx, y, 55, 16, 2, 2, 'F');
-    doc.setDrawColor(...C.border);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(bx, y, 55, 16, 2, 2, 'S');
-    setFont('normal', 7, C.muted);
-    doc.text(c.label.toUpperCase(), bx + 4, y + 5);
-    setFont('bold', 11, C.accent);
-    doc.text(c.value, bx + 4, y + 13);
+  const pillW = 52, pillH = 14, pillsPerRow = 5;
+  cfgItems.forEach((item, i) => {
+    const col = i % pillsPerRow, row = Math.floor(i / pillsPerRow);
+    const bx = ML + col * (pillW + 3), by = y + row * (pillH + 4);
+    doc.setFillColor(...C.surface2); doc.roundedRect(bx, by, pillW, pillH, 1.5, 1.5, 'F');
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.2); doc.roundedRect(bx, by, pillW, pillH, 1.5, 1.5, 'S');
+    sf('normal', 6.5, C.muted); doc.text(item[0].toUpperCase(), bx + 3, by + 4.5);
+    sf('bold', 8, C.accent); doc.text(item[1], bx + 3, by + 11);
   });
-  y += 24;
+  y += Math.ceil(cfgItems.length / pillsPerRow) * (pillH + 4) + 6;
 
-  // ---- Trophy Config ----
-  checkY(52);
-  setFont('bold', 9, C.muted);
-  doc.text('TROPHY CONFIGURATION', ML, y);
-  y += 6;
-
-  const tc = payload.configuration.trophyConfig;
-  const trophyCols = [
-    { label: 'Max Positive  (Underdog Win)',   value: '+' + tc.winZone.maxPositive,  color: C.green },
-    { label: 'Mid Positive  (Equal Match Win)', value: '+' + tc.winZone.midPositive,  color: C.green },
-    { label: 'Low Positive  (Favourite Win)',   value: '+' + tc.winZone.lowPositive,  color: C.green },
-    { label: 'Low Negative  (Underdog Loss)',   value: String(tc.lossZone.lowNegative), color: C.red },
-    { label: 'Mid Negative  (Equal Match Loss)',value: String(tc.lossZone.midNegative), color: C.red },
-    { label: 'Max Negative  (Favourite Loss)',  value: String(tc.lossZone.maxNegative), color: C.red },
+  // Trophy zone config
+  checkY(28);
+  sectionHeading('Trophy Zone Configuration');
+  const wz = cfg.trophyConfig.winZone, lz = cfg.trophyConfig.lossZone;
+  const tzItems = [
+    ['Max Positive (Underdog Win)', '+' + wz.maxPositive, C.green],
+    ['Mid Positive (Equal Win)',    '+' + wz.midPositive, C.green],
+    ['Low Positive (Favourite Win)','+' + wz.lowPositive, C.green],
+    ['Low Negative (Underdog Loss)',String(lz.lowNegative), C.red],
+    ['Mid Negative (Equal Loss)',   String(lz.midNegative), C.red],
+    ['Max Negative (Favourite Loss)',String(lz.maxNegative), C.red],
   ];
-
-  const half = Math.ceil(trophyCols.length / 2);
-  trophyCols.forEach((item, i) => {
-    const col = i < half ? 0 : 1;
-    const row = i < half ? i : i - half;
-    const bx = ML + col * (CW / 2 + 2);
-    const by = y + row * 10;
-    doc.setFillColor(...C.surface2);
-    doc.roundedRect(bx, by, CW / 2 - 2, 8, 1, 1, 'F');
-    setFont('normal', 7.5, C.muted);
-    doc.text(item.label, bx + 3, by + 5.5);
-    setFont('bold', 8, item.color);
-    doc.text(item.value, bx + CW / 2 - 5, by + 5.5, { align: 'right' });
+  const half = 3;
+  tzItems.forEach((item, i) => {
+    const col = i < half ? 0 : 1, row = i < half ? i : i - half;
+    const bx = ML + col * (CW / 2 + 2), by = y + row * 9;
+    doc.setFillColor(...C.surface2); doc.roundedRect(bx, by, CW / 2 - 2, 7.5, 1, 1, 'F');
+    sf('normal', 7, C.muted); doc.text(item[0], bx + 3, by + 5);
+    sf('bold', 7.5, item[2]); doc.text(item[1], bx + CW / 2 - 5, by + 5, { align:'right' });
   });
-  y += half * 10 + 8;
+  y += 3 * 9 + 8;
 
-  // ---- Player Inputs ----
+  // ── PAGE 1 continued: Player Inputs ──────────────────────────────────────
+  checkY(40);
   sectionHeading('Player Inputs');
-
-  const inputHeaders = ['Player', 'Current Elo', 'Current Trophies', 'Match Score', 'Rank'];
-  const inputColW = [35, 30, 35, 30, 20];
+  const inCols = ['Player','Match Status','Current Elo','Current Trophies','Match Score'];
+  const inW    = [35, 30, 28, 30, 28];
   let cx = ML;
-
-  // Header row
-  doc.setFillColor(...C.surface2);
-  doc.rect(ML, y, CW, 8, 'F');
-  inputHeaders.forEach((h, i) => {
-    setFont('bold', 7, C.accent);
-    doc.text(h.toUpperCase(), cx + 2, y + 5.5);
-    cx += inputColW[i];
-  });
+  doc.setFillColor(...C.surface2); doc.rect(ML, y, CW, 8, 'F');
+  inCols.forEach((h, i) => { sf('bold', 6.5, C.accent); doc.text(h.toUpperCase(), cx + 2, y + 5.5); cx += inW[i]; });
   y += 8;
-
-  payload.playerInputs.forEach((p, idx) => {
+  p.playerInputs.forEach((pl, idx) => {
     checkY(8);
-    if (idx % 2 === 0) {
-      doc.setFillColor(...C.surface);
-      doc.rect(ML, y, CW, 7.5, 'F');
-    }
+    if (idx % 2 === 0) { doc.setFillColor(...C.surface); doc.rect(ML, y, CW, 7, 'F'); }
     cx = ML;
-    const vals = [p.playerId, p.currentElo, p.currentTrophies, p.matchScore, p.assignedRank];
+    const vals = [pl.playerId, pl.matchStatus, pl.currentElo, pl.currentTrophies, pl.matchScore];
     vals.forEach((v, i) => {
-      setFont(i === 0 ? 'bold' : 'normal', 8, i === 0 ? C.white : C.muted);
-      doc.text(String(v), cx + 2, y + 5);
-      cx += inputColW[i];
+      sf(i === 0 ? 'bold' : 'normal', 8, i === 1 ? (v === 'COMPLETED' ? C.green : C.red) : i === 0 ? C.white : C.muted);
+      doc.text(String(v), cx + 2, y + 5); cx += inW[i];
     });
-    y += 7.5;
+    y += 7;
   });
 
-  y += 8;
-
-  // ============================
-  // PAGE 2 — RESULTS TABLE
-  // ============================
+  // ── PAGE 2: Results Table ─────────────────────────────────────────────────
   newPage();
-
-  // Mini header on page 2
-  doc.setFillColor(...C.surface);
-  doc.rect(0, 0, PW, 14, 'F');
-  doc.setFillColor(...C.accent);
-  doc.rect(0, 14, PW, 0.5, 'F');
-  setFont('bold', 10, C.white);
-  doc.text('BATTLEBUCKS  |  Match Results', ML, 10);
+  doc.setFillColor(...C.surface); doc.rect(0, 0, PW, 14, 'F');
+  doc.setFillColor(...C.accent);  doc.rect(0, 14, PW, 0.5, 'F');
+  sf('bold', 10, C.white); doc.text('BATTLEBUCKS  |  Match Results', ML, 10);
   y = 22;
+  sectionHeading('Calculation Results (sorted by rank)');
 
-  sectionHeading('Calculation Results  (sorted by rank)');
-
-  // Table column definitions
-  const cols = [
-    { label: 'Player',        key: 'playerId',       w: 24, align: 'left'  },
-    { label: 'Rank',          key: 'rank',            w: 10, align: 'right' },
-    { label: 'Old Elo',       key: 'oldElo',          w: 18, align: 'right' },
-    { label: 'Score (S)',     key: 'actualScore',     w: 18, align: 'right' },
-    { label: 'Exp. (E)',      key: 'expectedScore',   w: 18, align: 'right' },
-    { label: 'Elo Change',    key: 'eloRatingChange', w: 20, align: 'right', highlight: 'elo' },
-    { label: 'New Elo',       key: 'newElo',          w: 18, align: 'right' },
-    { label: 'Win Trph',      key: 'winTrophy',       w: 17, align: 'right' },
-    { label: 'Loss Trph',     key: 'lossTrophy',      w: 17, align: 'right' },
-    { label: 'Blend',         key: 'blend',           w: 15, align: 'right' },
-    { label: 'Trph Change',   key: 'trophyChange',    w: 15, align: 'right', highlight: 'trophy' },
+  const resCols = [
+    { h:'Player',        k:'playerId',           w:22, align:'left'  },
+    { h:'Rank',          k:'rank',               w:10, align:'right' },
+    { h:'Status',        k:'matchStatus',        w:22, align:'left'  },
+    { h:'Old Elo',       k:'oldElo',             w:18, align:'right' },
+    { h:'Score(S)',      k:'actualScore',        w:16, align:'right' },
+    { h:'Exp(E)',        k:'expectedScore',      w:16, align:'right' },
+    { h:'Elo Change',   k:'eloDelta',           w:18, align:'right', hl:'elo'    },
+    { h:'New Elo',       k:'newElo',             w:18, align:'right' },
+    { h:'Formula Trph', k:'formulaTrophyDelta', w:18, align:'right' },
+    { h:'Trph Change',  k:'trophyDelta',        w:18, align:'right', hl:'trophy' },
+    { h:'Bonus Trph',   k:'bonusTrophies',      w:17, align:'right' },
+    { h:'Final Trph',   k:'newTrophies',        w:17, align:'right' },
+    { h:'Pool Coins',   k:'poolCoins',          w:17, align:'right' },
+    { h:'Bonus Coins',  k:'bonusCoins',         w:17, align:'right' },
+    { h:'Total Coins',  k:'totalCoins',         w:17, align:'right' },
+    { h:'Pool Gems',    k:'poolGems',           w:15, align:'right' },
+    { h:'Bonus Gems',   k:'bonusGems',          w:15, align:'right' },
+    { h:'Total Gems',   k:'totalGems',          w:15, align:'right' },
+    { h:'Pool GG',      k:'poolGG',             w:12, align:'right' },
+    { h:'Bonus GG',     k:'bonusGG',            w:12, align:'right' },
+    { h:'Total GG',     k:'totalGG',            w:12, align:'right' },
   ];
 
-  // Draw header
-  doc.setFillColor(...C.surface2);
-  doc.rect(ML, y, CW, 9, 'F');
-  doc.setDrawColor(...C.accent);
-  doc.setLineWidth(0.4);
-  doc.rect(ML, y, CW, 9, 'S');
+  // Scale columns to fit page width
+  const totalW = resCols.reduce((s, c) => s + c.w, 0);
+  const scale  = CW / totalW;
+  resCols.forEach(c => { c.w = c.w * scale; });
 
+  // Header
+  doc.setFillColor(...C.surface2); doc.rect(ML, y, CW, 8.5, 'F');
+  doc.setDrawColor(...C.accent); doc.setLineWidth(0.3); doc.rect(ML, y, CW, 8.5, 'S');
   cx = ML;
-  cols.forEach(col => {
-    if (col.highlight === 'elo') {
-      doc.setFillColor(...C.hlElo);
-      doc.rect(cx, y, col.w, 9, 'F');
-    } else if (col.highlight === 'trophy') {
-      doc.setFillColor(...C.hlTrophy);
-      doc.rect(cx, y, col.w, 9, 'F');
-    }
-    setFont('bold', 6.5, col.highlight ? C.accent : C.muted);
+  resCols.forEach(col => {
+    if (col.hl === 'elo')    { doc.setFillColor(...C.hlElo);    doc.rect(cx, y, col.w, 8.5, 'F'); }
+    if (col.hl === 'trophy') { doc.setFillColor(...C.hlTrophy); doc.rect(cx, y, col.w, 8.5, 'F'); }
+    sf('bold', 5.5, col.hl ? C.accent : C.muted);
     const tx = col.align === 'right' ? cx + col.w - 1.5 : cx + 1.5;
-    doc.text(col.label.toUpperCase(), tx, y + 5.8, { align: col.align === 'right' ? 'right' : 'left' });
+    doc.text(col.h.toUpperCase(), tx, y + 5.8, { align: col.align === 'right' ? 'right' : 'left' });
     cx += col.w;
   });
-  y += 9;
+  y += 8.5;
 
-  // Draw rows
-  payload.results.forEach((r, idx) => {
-    checkY(9);
-    const rowH = 8.5;
-    // Alternating row bg
+  // Rows
+  p.results.forEach((r, idx) => {
+    checkY(8);
+    const rh = 7.5;
     doc.setFillColor(...(idx % 2 === 0 ? C.surface : C.bg));
-    doc.rect(ML, y, CW, rowH, 'F');
+    doc.rect(ML, y, CW, rh, 'F');
 
-    // Highlight columns
-    const eloStart = ML + cols.slice(0, 5).reduce((s, c) => s + c.w, 0);
-    const trophyStart = ML + cols.slice(0, 10).reduce((s, c) => s + c.w, 0);
-    doc.setFillColor(...C.hlElo);
-    doc.rect(eloStart, y, cols[5].w, rowH, 'F');
-    doc.setFillColor(...C.hlTrophy);
-    doc.rect(trophyStart, y, cols[10].w, rowH, 'F');
+    // Highlight elo + trophy change columns
+    let ecx = ML; resCols.forEach(c => { if (c.k === 'eloDelta') { doc.setFillColor(...C.hlElo); doc.rect(ecx, y, c.w, rh, 'F'); } ecx += c.w; });
+    ecx = ML; resCols.forEach(c => { if (c.k === 'trophyDelta') { doc.setFillColor(...C.hlTrophy); doc.rect(ecx, y, c.w, rh, 'F'); } ecx += c.w; });
 
     cx = ML;
-    cols.forEach((col, ci) => {
-      const raw = r[col.key];
-      let display = '';
-      let color = C.muted;
+    resCols.forEach(col => {
+      const raw = r[col.k];
+      let txt = '', color = C.muted, bold = false;
 
-      if (col.key === 'playerId') {
-        display = String(raw);
-        color = C.white;
-      } else if (col.key === 'rank') {
-        display = String(raw);
+      if (col.k === 'playerId') { txt = String(raw); color = C.white; bold = true; }
+      else if (col.k === 'rank') {
+        txt = String(raw);
         color = raw === 1 ? [251,191,36] : raw === 2 ? [148,163,184] : raw === 3 ? [180,83,9] : C.muted;
-      } else if (col.key === 'eloRatingChange') {
-        const v = parseFloat(raw);
-        display = (v > 0 ? '+' : '') + v.toFixed(2);
-        color = v > 0 ? C.green : v < 0 ? C.red : C.muted;
-      } else if (col.key === 'trophyChange') {
-        display = (raw > 0 ? '+' : '') + raw;
-        color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted;
-      } else if (col.key === 'winTrophy') {
-        display = '+' + parseFloat(raw).toFixed(2);
-        color = C.green;
-      } else if (col.key === 'lossTrophy') {
-        display = parseFloat(raw).toFixed(2);
-        color = C.red;
-      } else if (typeof raw === 'number') {
-        display = raw % 1 === 0 ? String(raw) : raw.toFixed(4);
-      } else {
-        display = String(raw);
+        bold = true;
       }
+      else if (col.k === 'matchStatus') {
+        txt = String(raw);
+        color = raw === 'COMPLETED' ? C.green : C.red;
+      }
+      else if (col.k === 'eloDelta') {
+        const v = parseFloat(raw); txt = (v > 0 ? '+' : '') + v.toFixed(2);
+        color = v > 0 ? C.green : v < 0 ? C.red : C.muted; bold = true;
+      }
+      else if (col.k === 'trophyDelta') {
+        txt = (raw > 0 ? '+' : '') + raw;
+        color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted; bold = true;
+      }
+      else if (['poolCoins','bonusCoins','totalCoins','poolGems','bonusGems','totalGems','poolGG','bonusGG','totalGG'].includes(col.k)) {
+        txt = raw > 0 ? '+' + raw : String(raw);
+        color = raw > 0 ? C.green : C.muted;
+        bold = ['totalCoins','totalGems','totalGG'].includes(col.k);
+      }
+      else if (col.k === 'newTrophies') { txt = String(raw); color = C.white; bold = true; }
+      else if (col.k === 'bonusTrophies') { txt = raw > 0 ? '+' + raw : '0'; color = raw > 0 ? C.green : C.muted; }
+      else if (col.k === 'formulaTrophyDelta') { txt = (raw > 0 ? '+' : '') + raw; color = raw > 0 ? C.green : raw < 0 ? C.red : C.muted; }
+      else if (typeof raw === 'number') { txt = raw % 1 !== 0 ? raw.toFixed(4) : String(raw); }
+      else { txt = String(raw); }
 
-      setFont(col.key === 'playerId' || col.key === 'eloRatingChange' || col.key === 'trophyChange' ? 'bold' : 'normal', 7, color);
+      sf(bold ? 'bold' : 'normal', 6, color);
       const tx = col.align === 'right' ? cx + col.w - 1.5 : cx + 1.5;
-      doc.text(display, tx, y + 5.5, { align: col.align === 'right' ? 'right' : 'left' });
+      doc.text(txt, tx, y + 5, { align: col.align === 'right' ? 'right' : 'left' });
       cx += col.w;
     });
 
-    // Row bottom border
-    doc.setDrawColor(...C.border);
-    doc.setLineWidth(0.15);
-    doc.line(ML, y + rowH, ML + CW, y + rowH);
-    y += rowH;
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.1);
+    doc.line(ML, y + rh, ML + CW, y + rh);
+    y += rh;
   });
 
-  y += 10;
+  // ── PAGE 3: Rank Config + Formula Reference ───────────────────────────────
+  newPage();
+  doc.setFillColor(...C.surface); doc.rect(0,0,PW,14,'F');
+  doc.setFillColor(...C.accent);  doc.rect(0,14,PW,0.5,'F');
+  sf('bold',10,C.white); doc.text('BATTLEBUCKS  |  Configuration Details', ML, 10);
+  y = 22;
 
-  // ---- Formula Reference ----
-  checkY(50);
+  sectionHeading('Rank Reward Configuration');
+  const rcCols = ['Rank','Coin Pool %','Gem Pool %','GG Pool %','Bonus Coins','Bonus Gems','Bonus GG','Bonus Trophies'];
+  const rcW = [18, 22, 20, 18, 22, 20, 18, 22];
+  cx = ML;
+  doc.setFillColor(...C.surface2); doc.rect(ML, y, CW, 8, 'F');
+  rcCols.forEach((h, i) => { sf('bold', 6.5, C.accent); doc.text(h.toUpperCase(), cx + 2, y + 5.5); cx += rcW[i]; });
+  y += 8;
+  p.configuration.rankConfig.forEach((rc, idx) => {
+    checkY(8);
+    if (idx % 2 === 0) { doc.setFillColor(...C.surface); doc.rect(ML, y, CW, 7, 'F'); }
+    cx = ML;
+    const vals = [rc.rank, rc.coinSharePercent+'%', rc.gemSharePercent+'%', rc.ggSharePercent+'%',
+                  rc.bonusCoins, rc.bonusGems, rc.bonusGG, rc.bonusTrophies];
+    vals.forEach((v, i) => {
+      sf(i === 0 ? 'bold' : 'normal', 8, i === 0 ? C.white : C.muted);
+      doc.text(String(v), cx + 2, y + 5); cx += rcW[i];
+    });
+    y += 7;
+  });
+  y += 8;
+
   sectionHeading('Formula Reference');
-
   const formulas = [
-    { label: 'Actual Score (S)',   formula: 'S = (n - rank) / (n - 1)' },
-    { label: 'Expected Score (E)', formula: 'E = avg[ 1 / (1 + 10 ^ ((oppElo - playerElo) / scalingFactor)) ]' },
-    { label: 'Elo Delta',          formula: 'delta_Elo = K x (S - E)' },
-    { label: 'Win Trophy',         formula: 'WinTrph = piecewise linear interpolation on MaxPos, MidPos, LowPos vs E' },
-    { label: 'Loss Trophy',        formula: 'LossTrph = piecewise linear interpolation on LowNeg, MidNeg, MaxNeg vs E' },
-    { label: 'Trophy Change',      formula: 'round( LossTrph + S x (WinTrph - LossTrph) )' },
+    ['Actual Score (S)',    'S = (n - rank) / (n - 1)'],
+    ['Expected Score (E)', 'E = avg[ 1 / (1 + 10 ^ ((oppElo - playerElo) / scalingFactor)) ]'],
+    ['Elo Delta',          'delta_Elo = K x (S - E)'],
+    ['Win Trophy',         'Piecewise linear: MaxPos->MidPos (E in [0,0.5)) | MidPos->LowPos (E in [0.5,1])'],
+    ['Loss Trophy',        'Piecewise linear: LowNeg->MidNeg (E in [0,0.5)) | MidNeg->MaxNeg (E in [0.5,1])'],
+    ['Trophy Change (raw)','round( LossTrophy + S x (WinTrophy - LossTrophy) )'],
+    ['Partial Tie (A)',     'All tied-rank players get the HIGHEST formula trophy in their rank group'],
+    ['Full Tie (B)',        'All elo deltas = 0; all trophy deltas = tieTrophies; rewards split equally by n'],
+    ['Pool Rewards',       'poolShare = floor( totalPool x coinSharePercent% / groupSize )'],
+    ['Bonus Rewards',      'bonusSplit = floor( bonusX / groupSize ); bonus trophies = round( bonusTrophies / groupSize )'],
   ];
-
-  formulas.forEach((f, i) => {
+  formulas.forEach(f => {
     checkY(10);
-    doc.setFillColor(...C.surface2);
-    doc.roundedRect(ML, y, CW, 9, 1, 1, 'F');
-    setFont('bold', 7.5, C.accent);
-    doc.text(f.label, ML + 3, y + 6);
-    setFont('normal', 7.5, C.muted);
-    doc.text(f.formula, ML + 55, y + 6);
-    y += 11;
+    doc.setFillColor(...C.surface2); doc.roundedRect(ML, y, CW, 8.5, 1, 1, 'F');
+    sf('bold', 7.5, C.accent); doc.text(f[0], ML + 3, y + 5.8);
+    sf('normal', 7, C.muted); doc.text(f[1], ML + 60, y + 5.8);
+    y += 10.5;
   });
 
-  // ---- Footer on each page ----
+  // Footer on all pages
   const totalPages = doc.getNumberOfPages();
   for (let pg = 1; pg <= totalPages; pg++) {
     doc.setPage(pg);
-    doc.setFillColor(...C.surface);
-    doc.rect(0, PH - 10, PW, 10, 'F');
-    doc.setDrawColor(...C.border);
-    doc.setLineWidth(0.3);
-    doc.line(0, PH - 10, PW, PH - 10);
-    setFont('normal', 7, C.faint);
-    doc.text('Battlebucks Match Simulator  |  Elo & Trophy Report', ML, PH - 3.5);
-    doc.text('Page ' + pg + ' of ' + totalPages, PW - MR, PH - 3.5, { align: 'right' });
+    doc.setFillColor(...C.surface); doc.rect(0, PH - 9, PW, 9, 'F');
+    doc.setDrawColor(...C.border); doc.setLineWidth(0.3); doc.line(0, PH - 9, PW, PH - 9);
+    sf('normal', 7, C.faint);
+    doc.text('Battlebucks Match Simulator v2  |  Elo & Trophy Report', ML, PH - 3);
+    doc.text('Page ' + pg + ' of ' + totalPages, PW - MR, PH - 3, { align:'right' });
   }
 
   doc.save('battlebucks-match-report.pdf');
   showToast('PDF downloaded!', 'success');
 });
 
-// ---- Toast helper ----
+// ---- Error / Toast Helpers ----
+function showError(msg) {
+  clearErrors();
+  const div = document.createElement('div');
+  div.id = 'active-error'; div.className = 'error-msg'; div.textContent = msg;
+  const target = document.getElementById('step-players');
+  target.insertBefore(div, target.querySelector('.step-actions'));
+}
+function clearErrors() {
+  const e = document.getElementById('active-error');
+  if (e) e.remove();
+}
 function showToast(msg, type = 'success') {
   let toast = document.getElementById('bb-toast');
-  if (!toast) {
-    toast = document.createElement('div');
-    toast.id = 'bb-toast';
-    toast.className = 'toast';
-    document.body.appendChild(toast);
-  }
-  toast.textContent = msg;
-  toast.className = 'toast ' + type;
-  // Force reflow for re-trigger
-  void toast.offsetWidth;
-  toast.classList.add('show');
+  if (!toast) { toast = document.createElement('div'); toast.id = 'bb-toast'; toast.className = 'toast'; document.body.appendChild(toast); }
+  toast.textContent = msg; toast.className = 'toast ' + type;
+  void toast.offsetWidth; toast.classList.add('show');
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('show'), 3000);
 }
