@@ -61,9 +61,9 @@ function buildRankConfigTable(total) {
   rankConfigTbody.innerHTML = '';
 
   const defaults = [
-    { coinSharePercent:50, gemSharePercent:50, ggSharePercent:50, bonusCoins:100, bonusGems:10, bonusGG:5,  bonusTrophies:20 },
-    { coinSharePercent:30, gemSharePercent:30, ggSharePercent:50, bonusCoins:50,  bonusGems:5,  bonusGG:2,  bonusTrophies:10 },
-    { coinSharePercent:20, gemSharePercent:20, ggSharePercent:0,  bonusCoins:0,   bonusGems:0,  bonusGG:0,  bonusTrophies:0  },
+    { coinSharePercent:50, gemSharePercent:50, ggSharePercent:50, bonusCoins:0, bonusGems:0, bonusGG:0,  bonusTrophies:0 },
+    { coinSharePercent:30, gemSharePercent:30, ggSharePercent:30, bonusCoins:0,  bonusGems:0,  bonusGG:0,  bonusTrophies:0 },
+    { coinSharePercent:20, gemSharePercent:20, ggSharePercent:20,  bonusCoins:0,   bonusGems:0,  bonusGG:0,  bonusTrophies:0  },
   ];
 
   for (let r = 1; r <= total; r++) {
@@ -216,13 +216,18 @@ btnCompute.addEventListener('click', () => {
   const total = currentTotalPlayers;
   const { eloConfig, trophyConfig, rankConfig, entryFee } = readConfig();
   const playerInputs = readPlayerInputs(total);
+  const rakeConfig = {
+  coinRakePercent: parseFloat(document.getElementById('coinRakePct').value) || 0,
+  gemRakePercent:  parseFloat(document.getElementById('gemRakePct').value)  || 0,
+  ggRakePercent:   parseFloat(document.getElementById('ggRakePct').value)   || 0,
+};
 
   if (!playerInputs) {
     showError('One or more players have invalid or missing values.');
     return;
   }
 
-  const gameModeConfig = { eloConfig, trophyConfig, rankConfig };
+  const gameModeConfig = { eloConfig, trophyConfig, rankConfig, rakeConfig };
 
   let results;
   try {
@@ -242,7 +247,7 @@ btnCompute.addEventListener('click', () => {
   );
 
   const meta = {
-    eloConfig, trophyConfig, rankConfig, entryFee,
+    eloConfig, trophyConfig, rankConfig, rakeConfig, entryFee,
     totalPlayers: total,
     fullTie, partialTie,
     totalPool: { coins: entryFee.coins * total, gems: entryFee.gems * total, gg: entryFee.gg * total },
@@ -323,6 +328,15 @@ function renderResults(results, meta) {
   <td class="elo-change-cell group-start">${r.poolGG > 0 ? '+'+r.poolGG : '<span class="val-zero">0</span>'}</td>
   <td class="currency-bonus">${r.bonusGG > 0 ? '+'+r.bonusGG : '<span class="val-zero">0</span>'}</td>
   <td class="currency-total">${r.totalGG > 0 ? '+'+r.totalGG : '<span class="val-zero">0</span>'}</td>
+  <td class="group-start val-zero">${r.grossPoolCoins}</td>
+<td class="val-negative">${r.rakeCoins > 0 ? '-'+r.rakeCoins : '0'}</td>
+<td>${r.netPoolCoins}</td>
+<td class="group-start val-zero">${r.grossPoolGems}</td>
+<td class="val-negative">${r.rakeGems > 0 ? '-'+r.rakeGems : '0'}</td>
+<td>${r.netPoolGems}</td>
+<td class="group-start val-zero">${r.grossPoolGG}</td>
+<td class="val-negative">${r.rakeGG > 0 ? '-'+r.rakeGG : '0'}</td>
+<td>${r.netPoolGG}</td>
 `;
     resultsTbody.appendChild(tr);
   });
@@ -342,6 +356,11 @@ function buildExportPayload(meta, playerInputs, results) {
       rankConfig: meta.rankConfig,
       entryFee: meta.entryFee,
       totalPool: meta.totalPool,
+      rake: {
+  coinRakePercent: meta.rakeConfig.coinRakePercent,
+  gemRakePercent:  meta.rakeConfig.gemRakePercent,
+  ggRakePercent:   meta.rakeConfig.ggRakePercent,
+},
     },
     playerInputs: playerInputs.map(p => ({
       playerId:        p.playerId,
@@ -373,6 +392,15 @@ function buildExportPayload(meta, playerInputs, results) {
       poolGG:             r.poolGG,
       bonusGG:            r.bonusGG,
       totalGG:            r.totalGG,
+      grossPoolCoins: r.grossPoolCoins,
+rakeCoins:      r.rakeCoins,
+netPoolCoins:   r.netPoolCoins,
+grossPoolGems:  r.grossPoolGems,
+rakeGems:       r.rakeGems,
+netPoolGems:    r.netPoolGems,
+grossPoolGG:    r.grossPoolGG,
+rakeGG:         r.rakeGG,
+netPoolGG:      r.netPoolGG,
     })),
   };
 }

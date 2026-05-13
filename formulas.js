@@ -13,6 +13,10 @@ function applyRound(value, mode) {
   }
 }
 
+function getRakeConfig(rakeConfig) {
+  return rakeConfig ?? { coinRakePercent: 0, gemRakePercent: 0, ggRakePercent: 0 };
+}
+
 // ---- Get RankRewardConfig or zero defaults ----
 function getRankRewardConfig(rankConfigs, rank) {
   return rankConfigs.find(r => r.rank === rank) ?? {
@@ -129,15 +133,47 @@ function isFullTie(players) {
 // REWARD HELPERS
 // =============================================================================
 
-function computeRankRewards(rc, totalPool, groupSize) {
+/**
+ * Reward bundle for a normal or partial-tie situation.
+ *
+ * When groupSize > 1 (partial tie), players at rank R consumed rank slots
+ * R, R+1, R+2 ... R+(groupSize-1). We sum the coinSharePercent (and other
+ * values) of ALL those slots, then divide evenly among the group.
+ *
+ * Example: rank 2 group of 3 → sum ranks 2+3+4 percents, divide by 3.
+ *
+ * Coins / Gems / GG splits → Math.floor (truncate remainder).
+ * Trophy bonus split       → Math.round  (nearest integer).
+ *
+ * @param {number}   startRank   The assigned rank of the tied group (lowest rank number)
+ * @param {number}   groupSize   How many players share this rank
+ * @param {Array}    rankConfigs Full rankConfig array from GameModeConfig
+ * @param {Object}   totalPool   { coins, gems, gg } accumulated pool
+ */
+function computeRankRewards(startRank, groupSize, rankConfigs, totalPool) {
+  // Collect all rank slots consumed by this tie group
+  let sumCoinPct = 0, sumGemPct = 0, sumGGPct = 0;
+  let sumBonusCoins = 0, sumBonusGems = 0, sumBonusGG = 0, sumBonusTrophies = 0;
+
+  for (let slot = startRank; slot < startRank + groupSize; slot++) {
+    const rc = getRankRewardConfig(rankConfigs, slot);
+    sumCoinPct       += rc.coinSharePercent;
+    sumGemPct        += rc.gemSharePercent;
+    sumGGPct         += rc.ggSharePercent;
+    sumBonusCoins    += rc.bonusCoins;
+    sumBonusGems     += rc.bonusGems;
+    sumBonusGG       += rc.bonusGG;
+    sumBonusTrophies += rc.bonusTrophies;
+  }
+
   return {
-    poolCoins:     Math.floor((totalPool.coins * rc.coinSharePercent) / 100 / groupSize),
-    poolGems:      Math.floor((totalPool.gems  * rc.gemSharePercent)  / 100 / groupSize),
-    poolGG:        Math.floor((totalPool.gg    * rc.ggSharePercent)   / 100 / groupSize),
-    bonusCoins:    Math.floor(rc.bonusCoins    / groupSize),
-    bonusGems:     Math.floor(rc.bonusGems     / groupSize),
-    bonusGG:       Math.floor(rc.bonusGG       / groupSize),
-    bonusTrophies: Math.round(rc.bonusTrophies / groupSize),
+    poolCoins:     Math.floor((totalPool.coins * sumCoinPct)    / 100 / groupSize),
+    poolGems:      Math.floor((totalPool.gems  * sumGemPct)     / 100 / groupSize),
+    poolGG:        Math.floor((totalPool.gg    * sumGGPct)      / 100 / groupSize),
+    bonusCoins:    Math.floor(sumBonusCoins    / groupSize),
+    bonusGems:     Math.floor(sumBonusGems     / groupSize),
+    bonusGG:       Math.floor(sumBonusGG       / groupSize),
+    bonusTrophies: Math.round(sumBonusTrophies / groupSize),
   };
 }
 
@@ -220,12 +256,26 @@ function resolveMatch(playerInputs, config, entryFee = { coins: 0, gems: 0, gg: 
     trophyDeltaByRank.set(rank, highest);
   }
 
-  // 6. Total reward pool
-  const totalPool = {
-    coins: entryFee.coins * n,
-    gems:  entryFee.gems  * n,
-    gg:    entryFee.gg    * n,
-  };
+  // ── 6. Compute total reward pool (after rake deduction) ──────────────────
+const rake = getRakeConfig(config.rakeConfig);
+
+const grossPool = {
+  coins: entryFee.coins * n,
+  gems:  entryFee.gems  * n,
+  gg:    entryFee.gg    * n,
+};
+
+const rakeAmount = {
+  coins: fullTie ? 0 : Math.floor(grossPool.coins * rake.coinRakePercent / 100),
+  gems:  fullTie ? 0 : Math.floor(grossPool.gems  * rake.gemRakePercent  / 100),
+  gg:    fullTie ? 0 : Math.floor(grossPool.gg    * rake.ggRakePercent   / 100),
+};
+
+const totalPool = {
+  coins: grossPool.coins - rakeAmount.coins,
+  gems:  grossPool.gems  - rakeAmount.gems,
+  gg:    grossPool.gg    - rakeAmount.gg,
+};
 
   // 7. Assemble results (preserve input order)
   return playerInputs.map(input => {
@@ -245,8 +295,8 @@ function resolveMatch(playerInputs, config, entryFee = { coins: 0, gems: 0, gg: 
     }
 
     const rewards = fullTie
-      ? computeFullTieRewards(rankConfig, totalPool, n)
-      : computeRankRewards(getRankRewardConfig(rankConfig, ranked.rank), totalPool, groupSize);
+  ? computeFullTieRewards(rankConfig, totalPool, n)
+  : computeRankRewards(ranked.rank, groupSize, rankConfig, totalPool);
 
     return {
       playerId:    input.playerId,
@@ -277,6 +327,15 @@ function resolveMatch(playerInputs, config, entryFee = { coins: 0, gems: 0, gg: 
       totalCoins: rewards.poolCoins + rewards.bonusCoins,
       totalGems:  rewards.poolGems  + rewards.bonusGems,
       totalGG:    rewards.poolGG    + rewards.bonusGG,
+      grossPoolCoins: grossPool.coins,
+grossPoolGems:  grossPool.gems,
+grossPoolGG:    grossPool.gg,
+rakeCoins:      rakeAmount.coins,
+rakeGems:       rakeAmount.gems,
+rakeGG:         rakeAmount.gg,
+netPoolCoins:   totalPool.coins,
+netPoolGems:    totalPool.gems,
+netPoolGG:      totalPool.gg,
     };
   });
 }
