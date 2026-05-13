@@ -38,7 +38,7 @@ document.querySelectorAll('.tooltip-trigger').forEach(el => {
 
 // ---- Presets ----
 preset2p.addEventListener('click', () => applyPreset({
-  maxPos:6, midPos:4, lowPos:2, lowNeg:-2, midNeg:-4, maxNeg:-6, tie:3
+  maxPos:8, midPos:6, lowPos:3, lowNeg:-2, midNeg:-4, maxNeg:-6, tie:3
 }));
 preset6p.addEventListener('click', () => applyPreset({
   maxPos:40, midPos:25, lowPos:10, lowNeg:-10, midNeg:-25, maxNeg:-40, tie:5
