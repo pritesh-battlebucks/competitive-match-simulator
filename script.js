@@ -146,7 +146,7 @@ function renderResults(results, meta) {
     <div class="summary-chip rake-chip">Net Pool <strong>${r0.distributablePool} ${meta.baseConfig.currency}</strong></div>
   `;
 
-  results.forEach(r => {
+  [...results].sort((a, b) => a.rank - b.rank).forEach(r => {
     const tr = document.createElement('tr');
     const eloClass = r.eloDelta > 0 ? 'val-positive' : r.eloDelta < 0 ? 'val-negative' : 'val-zero';
     const trophClass = r.formulaTrophyDelta > 0 ? 'val-positive' : r.formulaTrophyDelta < 0 ? 'val-negative' : 'val-zero';
