@@ -63,7 +63,7 @@ body {
   background-clip: text; letter-spacing: -0.5px;
 }
 .header-sub {
-  color: var(--text-muted); font-size: 13px;
+  color: var(--text-muted); font-size: 20px;
   border-left: 1px solid var(--border); padding-left: 16px; margin-left: 4px;
 }
 
@@ -430,4 +430,19 @@ body {
 
 .rake-chip strong {
   color: #fca5a5;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+.author-tag {
+  font-style: italic;
+  font-size: 17px;
+  color: var(--text-muted);
+  margin-left: auto;
+  padding-left: 16px;
 }

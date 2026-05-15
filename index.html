@@ -3,306 +3,177 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Battlebucks — Elo & Trophy Simulator</title>
+  <title>Battlebucks — Elo, Trophy & Reward Simulator</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
-
   <header class="site-header">
     <div class="header-inner">
       <div class="logo">
-        <span class="logo-icon">&#9876;</span>
+        <span class="logo-icon">⚔️</span>
         <span class="logo-text">Battlebucks</span>
       </div>
-      <p class="header-sub">Match Simulator</p>
+      <p class="header-sub">Elo, Trophy & Reward Simulator</p>
+      <span class="author-tag">Author: Pritesh Srv</span>
     </div>
   </header>
 
   <main class="main-container">
-
-    <!-- Module Selector -->
-    <section class="section-selector">
-      <h2 class="section-title">Select Simulator Module</h2>
-      <div class="module-cards">
-        <div class="module-card active">
-          <div class="module-icon">&#128202;</div>
-          <div class="module-label">Elo &amp; Trophies</div>
-          <div class="module-desc">Calculate rating and trophy changes after a match</div>
-          <div class="module-badge">Available</div>
-        </div>
-        <div class="module-card disabled">
-          <div class="module-icon">&#127919;</div>
-          <div class="module-label">Matchmaking</div>
-          <div class="module-desc">Simulate player matchmaking queues</div>
-          <div class="module-badge coming">Coming Soon</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ======================================================
-         STEP 1 — Match Configuration
-    ====================================================== -->
-    <div class="step-card" id="step-config">
+    <section class="step-card" id="step-config">
       <div class="step-header">
-        <span class="step-badge">Step 1</span>
-        <h3>Match Configuration</h3>
+        <span class="step-badge">Config</span>
+        <h3>Game Mode Configuration</h3>
       </div>
 
-      <!-- Elo Config -->
-      <div class="config-section-label">Elo Configuration</div>
+      <div class="config-section-label">Base Config</div>
       <div class="config-grid">
         <div class="input-group">
-          <label for="kFactor">K-Factor
-            <span class="tooltip-trigger" data-tip="Max Elo points exchanged per match.">&#9432;</span>
-          </label>
-          <input type="number" id="kFactor" value="32" min="1" max="100" />
+          <label for="entryFee">Entry Fee</label>
+          <input type="number" id="entryFee" value="50" min="0" />
         </div>
         <div class="input-group">
-          <label for="scalingFactor">Scaling Factor
-            <span class="tooltip-trigger" data-tip="Elo sensitivity divisor. Standard = 400.">&#9432;</span>
-          </label>
-          <input type="number" id="scalingFactor" value="400" min="100" max="1000" />
-        </div>
-        <div class="input-group">
-          <label for="eloStrategy">Elo Strategy</label>
-          <select id="eloStrategy">
-            <option value="PAIRWISE_AVERAGE_RANK">PAIRWISE_AVERAGE_RANK</option>
+          <label for="currencyType">Currency</label>
+          <select id="currencyType">
+            <option value="COINS" selected>COINS</option>
+            <option value="GEMS">GEMS</option>
+            <option value="GG">GG</option>
           </select>
+        </div>
+        <div class="input-group">
+          <label for="rakePercent">Rake %</label>
+          <input type="number" id="rakePercent" value="10" min="0" max="100" />
+        </div>
+      </div>
+
+      <div class="config-section-label">Elo Config</div>
+      <div class="config-grid">
+        <div class="input-group">
+          <label for="kFactor">K-Factor</label>
+          <input type="number" id="kFactor" value="32" min="1" />
+        </div>
+        <div class="input-group">
+          <label for="scalingFactor">Scaling Factor</label>
+          <input type="number" id="scalingFactor" value="400" min="1" />
         </div>
         <div class="input-group">
           <label for="eloRoundMode">Elo Round Mode</label>
           <select id="eloRoundMode">
-            <option value="NEAREST">NEAREST</option>
+            <option value="NEAREST" selected>NEAREST</option>
+            <option value="FLOOR">FLOOR</option>
+            <option value="CEIL">CEIL</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="config-section-label">Trophy Config</div>
+      <div class="trophy-grid">
+        <div class="trophy-col win-col">
+          <div class="trophy-col-label win-label">Win Zone</div>
+          <div class="input-group"><label for="maxPos">Max Positive</label><input type="number" id="maxPos" value="8" /></div>
+          <div class="input-group"><label for="midPos">Mid Positive</label><input type="number" id="midPos" value="6" /></div>
+          <div class="input-group"><label for="lowPos">Low Positive</label><input type="number" id="lowPos" value="3" /></div>
+        </div>
+        <div class="trophy-divider"></div>
+        <div class="trophy-col loss-col">
+          <div class="trophy-col-label loss-label">Loss Zone</div>
+          <div class="input-group"><label for="lowNeg">Low Negative</label><input type="number" id="lowNeg" value="-2" /></div>
+          <div class="input-group"><label for="midNeg">Mid Negative</label><input type="number" id="midNeg" value="-4" /></div>
+          <div class="input-group"><label for="maxNeg">Max Negative</label><input type="number" id="maxNeg" value="-6" /></div>
+        </div>
+      </div>
+      <div class="config-grid trophy-extra-grid">
+        <div class="input-group">
+          <label for="tieTrophies">Tie Trophies</label>
+          <input type="number" id="tieTrophies" value="5" />
+        </div>
+        <div class="input-group">
+          <label for="trophyRoundMode">Trophy Round Mode</label>
+          <select id="trophyRoundMode">
+            <option value="NEAREST" selected>NEAREST</option>
             <option value="FLOOR">FLOOR</option>
             <option value="CEIL">CEIL</option>
           </select>
         </div>
         <div class="input-group">
-          <label for="totalPlayers">Total Players
-            <span class="tooltip-trigger" data-tip="Number of players in this match (2-12).">&#9432;</span>
-          </label>
+          <label for="totalPlayers">Total Players</label>
           <input type="number" id="totalPlayers" value="6" min="2" max="12" />
         </div>
       </div>
 
-      <!-- Trophy Config -->
-      <div class="config-section-label" style="margin-top:20px;">Trophy Configuration</div>
-      <div class="trophy-config-section">
-        <div class="trophy-config-header">
-          <div class="preset-btns">
-            <button class="preset-btn" id="preset2p">2-Player Preset</button>
-            <button class="preset-btn" id="preset6p">6-Player Preset</button>
-          </div>
-          <div class="input-group" style="flex-direction:row; align-items:center; gap:14px; flex-wrap:wrap;">
-            <div class="input-group" style="min-width:130px;">
-              <label for="trophyStrategy">Trophy Strategy</label>
-              <select id="trophyStrategy">
-                <option value="DYNAMIC_SLIDING_SCALE">DYNAMIC_SLIDING_SCALE</option>
-              </select>
-            </div>
-            <div class="input-group" style="min-width:120px;">
-              <label for="trophyRoundMode">Trophy Round Mode</label>
-              <select id="trophyRoundMode">
-                <option value="NEAREST">NEAREST</option>
-                <option value="FLOOR">FLOOR</option>
-                <option value="CEIL">CEIL</option>
-              </select>
-            </div>
-            <div class="input-group" style="min-width:110px;">
-              <label for="tieTrophies">Tie Trophies
-                <span class="tooltip-trigger" data-tip="Fixed trophy amount given to all players on a full tie (Case B).">&#9432;</span>
-              </label>
-              <input type="number" id="tieTrophies" value="5" min="0" />
-            </div>
-          </div>
-        </div>
-        <div class="trophy-grid">
-          <div class="trophy-col win-col">
-            <div class="trophy-col-label win-label">Win Zone (Positive)</div>
-            <div class="input-group">
-              <label for="maxPos">Max Positive <span class="hint">(underdog win, E&#8594;0)</span></label>
-              <input type="number" id="maxPos" value="40" />
-            </div>
-            <div class="input-group">
-              <label for="midPos">Mid Positive <span class="hint">(equal match, E=0.5)</span></label>
-              <input type="number" id="midPos" value="25" />
-            </div>
-            <div class="input-group">
-              <label for="lowPos">Low Positive <span class="hint">(favourite win, E&#8594;1)</span></label>
-              <input type="number" id="lowPos" value="10" />
-            </div>
-          </div>
-          <div class="trophy-divider"></div>
-          <div class="trophy-col loss-col">
-            <div class="trophy-col-label loss-label">Loss Zone (Negative)</div>
-            <div class="input-group">
-              <label for="lowNeg">Low Negative <span class="hint">(underdog loss, E&#8594;0)</span></label>
-              <input type="number" id="lowNeg" value="-10" />
-            </div>
-            <div class="input-group">
-              <label for="midNeg">Mid Negative <span class="hint">(equal loss, E=0.5)</span></label>
-              <input type="number" id="midNeg" value="-25" />
-            </div>
-            <div class="input-group">
-              <label for="maxNeg">Max Negative <span class="hint">(favourite loss, E&#8594;1)</span></label>
-              <input type="number" id="maxNeg" value="-40" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Entry Fee -->
-      <div class="config-section-label" style="margin-top:20px;">Entry Fee (per player)</div>
-      <div class="config-grid">
-        <div class="input-group">
-          <label for="entryCoins">Coins</label>
-          <input type="number" id="entryCoins" value="50" min="0" />
-        </div>
-        <div class="input-group">
-          <label for="entryGems">Gems</label>
-          <input type="number" id="entryGems" value="0" min="0" />
-        </div>
-        <div class="input-group">
-          <label for="entryGG">GG</label>
-          <input type="number" id="entryGG" value="0" min="0" />
-        </div>
-      </div>
-
-      <!-- Rake Config -->
-<div class="config-section-label" style="margin-top:20px;">Rake Configuration
-  <span class="tooltip-trigger" data-tip="Platform commission deducted from the gross prize pool before distribution.">&#9432;</span>
-</div>
-<div class="config-grid">
-  <div class="input-group">
-    <label for="coinRakePct">Coin Rake %</label>
-    <input type="number" id="coinRakePct" value="10" min="0" max="100" />
-  </div>
-  <div class="input-group">
-    <label for="gemRakePct">Gem Rake %</label>
-    <input type="number" id="gemRakePct" value="5" min="0" max="100" />
-  </div>
-  <div class="input-group">
-    <label for="ggRakePct">GG Rake %</label>
-    <input type="number" id="ggRakePct" value="5" min="0" max="100" />
-  </div>
-</div>
-    </div>
-
-    <!-- ======================================================
-         STEP 2 — Rank Config
-    ====================================================== -->
-    <div class="step-card" id="step-rank-config">
-      <div class="step-header">
-        <span class="step-badge">Step 2</span>
-        <h3>Rank Reward Configuration</h3>
-        <span class="player-count-badge" id="rank-config-label"></span>
-      </div>
-      <div class="rank-config-note">
-        Configure reward percentages and bonuses per rank. Ranks not configured default to zero rewards.
-      </div>
+      <div class="config-section-label">Rank Rewards</div>
       <div class="rank-config-table-wrap">
-        <table class="rank-config-table" id="rank-config-table">
+        <table class="rank-config-table">
           <thead>
             <tr>
               <th>Rank</th>
-              <th>Coin Pool %</th>
-              <th>Gem Pool %</th>
-              <th>GG Pool %</th>
-              <th>Bonus Coins</th>
-              <th>Bonus Gems</th>
-              <th>Bonus GG</th>
+              <th>Pool Share %</th>
+              <th>Bonus Amount</th>
               <th>Bonus Trophies</th>
             </tr>
           </thead>
-          <tbody id="rank-config-tbody"></tbody>
+          <tbody id="rank-config-body"></tbody>
         </table>
       </div>
-    </div>
+    </section>
 
-    <!-- ======================================================
-         STEP 3 — Player Data
-    ====================================================== -->
-    <div class="step-card" id="step-players">
+    <section class="step-card" id="step-players">
       <div class="step-header">
-        <span class="step-badge">Step 3</span>
-        <h3>Player Data</h3>
-        <span class="player-count-badge" id="player-count-label"></span>
+        <span class="step-badge">Players</span>
+        <h3>Player Inputs</h3>
+        <span class="player-count-badge" id="player-count-label">6 Players</span>
       </div>
       <div class="players-note">
-        Enter each player's current Elo, Trophies, match score, and match status.
-        <br><span class="note-sub">COMPLETED players are ranked by score. ABANDONED/FORFEITED players are automatically placed last.</span>
+        Completed players are ranked by score. Non-completed players are automatically forced to last rank.
       </div>
       <div class="players-grid" id="players-grid"></div>
       <div class="step-actions">
-        <button class="btn-primary" id="btn-compute">
-          <span class="btn-icon">&#9889;</span>
-          Compute Results
-        </button>
+        <button class="btn-primary" id="btn-compute">Compute Results</button>
       </div>
-    </div>
+    </section>
 
-    <!-- ======================================================
-         STEP 4 — Results
-    ====================================================== -->
-    <div class="step-card" id="step-results">
+    <section class="step-card" id="step-results">
       <div class="step-header">
-        <span class="step-badge">Step 4</span>
+        <span class="step-badge">Results</span>
         <h3>Match Results</h3>
       </div>
+
       <div class="export-actions">
-        <button class="btn-export btn-copy-json" id="btn-copy-json">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-          Copy JSON
-        </button>
-        <button class="btn-export btn-download-pdf" id="btn-download-pdf">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Download PDF
-        </button>
+        <button class="btn-export btn-copy-json" id="btn-copy-json">Copy JSON</button>
+        <button class="btn-export btn-download-pdf" id="btn-download-pdf">Download PDF</button>
       </div>
+
       <div class="results-summary" id="results-summary"></div>
       <div id="results-placeholder" class="results-placeholder">
-        Fill in Steps 1-3 above and click <strong>Compute Results</strong> to see output here.
+        Fill config and player details, then click Compute Results.
       </div>
-      <div class="table-wrapper" id="results-table-wrapper" style="display:none;">
+
+      <div class="table-wrapper">
         <table class="results-table" id="results-table">
           <thead>
-  <tr>
-    <!-- Identity -->
-    <th>Player</th>
-    <th>Rank</th>
-    <th>Status</th>
-    <!-- Elo -->
-    <th>Old Elo</th>
-    <th>Score (S)</th>
-    <th>Exp. (E)</th>
-    <th class="highlight-col">Elo Change</th>
-    <th>New Elo</th>
-    <!-- Trophies -->
-    <th>Win Trophy</th>
-    <th>Loss Trophy</th>
-    <th class="highlight-col">Formula Trophy</th>
-    <th>Bonus Trophy</th>
-    <th>Final Trophy</th>
-    <!-- Coins -->
-    <th class="highlight-col">Pool Coins</th>
-    <th>Bonus Coins</th>
-    <th>Total Coins</th>
-    <!-- Gems -->
-    <th class="highlight-col">Pool Gems</th>
-    <th>Bonus Gems</th>
-    <th>Total Gems</th>
-    <!-- GG -->
-    <th class="highlight-col">Pool GG</th>
-    <th>Bonus GG</th>
-    <th>Total GG</th>
-  </tr>
-</thead>
+            <tr>
+              <th>Player</th>
+              <th>Rank</th>
+              <th>Status</th>
+              <th>Old Elo</th>
+              <th>S</th>
+              <th>E</th>
+              <th class="highlight-col">Elo Change</th>
+              <th>New Elo</th>
+              <!-- <th>Win Trophy</th>
+              <th>Loss Trophy</th> -->
+              <th class="highlight-col">Formula Trophy</th>
+              <th>Bonus Trophy</th>
+              <th>Final Trophy</th>
+              <th class="highlight-col">Pool Amount</th>
+              <th>Bonus Amount</th>
+              <th>Total Amount</th>
+            </tr>
+          </thead>
           <tbody id="results-tbody"></tbody>
         </table>
       </div>
-    </div>
-
+    </section>
   </main>
 
   <div class="tooltip-box" id="tooltip-box"></div>
