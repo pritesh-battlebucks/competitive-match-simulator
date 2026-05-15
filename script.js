@@ -261,8 +261,8 @@ function downloadPdf(payload) {
 
   doc.setFillColor(...C.surface); doc.rect(0,0,PW,22,'F');
   doc.setFillColor(...C.accent); doc.rect(0,22,PW,.7,'F');
-  sf('bold', 18, C.white); doc.text('BATTLEBUCKS', ML, 10);
-  sf('normal', 9, C.muted); doc.text('Single-Currency Elo, Trophy & Reward Report', ML, 16);
+  sf('bold', 18, C.white); doc.text('COMPETITIVE MATCH SIMULATOR - BATTLEBUCKS', ML, 10);
+  sf('normal', 9, C.muted); doc.text('Elo, Trophy & Reward Calculation Report for Competitive Match', ML, 16);
   sf('italic', 9, C.muted); doc.text('Author: Pritesh Srv', PW - MR, 10, { align: 'right' });
   y = 30;
 
@@ -365,7 +365,7 @@ function downloadPdf(payload) {
     y += rh;
   });
 
-  doc.save('battlebucks-match-report.pdf');
+  doc.save('competitive-match-report.pdf');
 }
 
 btnCopyJson.addEventListener('click', async () => {
