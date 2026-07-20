@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Battlebucks — Elo, Trophy & Reward Simulator</title>
+  <title>Battlebucks — Elo, Trophy &amp; Reward Simulator</title>
   <link rel="stylesheet" href="style.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -14,7 +14,7 @@
         <span class="logo-icon">⚔️</span>
         <span class="logo-text">Battlebucks</span>
       </div>
-      <p class="header-sub">Elo, Trophy & Reward Simulator</p>
+      <p class="header-sub">Elo, Trophy &amp; Reward Simulator</p>
       <span class="author-tag">Author: Pritesh Srv</span>
     </div>
   </header>
@@ -101,6 +101,44 @@
         </div>
       </div>
 
+      <!-- Safety Limits -->
+      <div class="config-section-label safety-label">
+        🛡️ Safety Limits
+        <span class="safety-hint">Caps the max trophies won or lost per match, applied after tier multipliers</span>
+      </div>
+      <div class="config-grid safety-grid">
+        <div class="input-group">
+          <label for="safetyMaxGain">Max Gain (per match)</label>
+          <input type="number" id="safetyMaxGain" value="40" min="0" />
+        </div>
+        <div class="input-group">
+          <label for="safetyMaxLoss">Max Loss (per match)</label>
+          <input type="number" id="safetyMaxLoss" value="30" min="0" />
+        </div>
+      </div>
+
+      <!-- Tier Config -->
+      <div class="config-section-label tier-section-label">
+        🏅 Tier Configuration
+        <span class="tier-section-hint">Define multipliers applied to formula trophies based on each player's tier</span>
+      </div>
+      <div class="tier-config-table-wrap">
+        <table class="tier-config-table" id="tier-config-table">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th>Positive Multiplier <span class="th-hint">(wins)</span></th>
+              <th>Negative Multiplier <span class="th-hint">(losses)</span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tier-config-body"></tbody>
+        </table>
+      </div>
+      <div class="tier-actions">
+        <button class="btn-add-tier" id="btn-add-tier">+ Add Tier</button>
+      </div>
+
       <div class="config-section-label">Rank Rewards</div>
       <div class="rank-config-table-wrap">
         <table class="rank-config-table">
@@ -155,14 +193,14 @@
               <th>Player</th>
               <th>Rank</th>
               <th>Status</th>
+              <th>Tier</th>
               <th>Old Elo</th>
               <th>S</th>
               <th>E</th>
               <th class="highlight-col">Elo Change</th>
               <th>New Elo</th>
-              <!-- <th>Win Trophy</th>
-              <th>Loss Trophy</th> -->
               <th class="highlight-col">Formula Trophy</th>
+              <th class="highlight-col tier-trophy-col">Tier Trophy</th>
               <th>Bonus Trophy</th>
               <th>Final Trophy</th>
               <th class="highlight-col">Pool Amount</th>

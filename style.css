@@ -1,5 +1,5 @@
 /* ============================================
-   Battlebucks Simulator v2 — Styles
+   Battlebucks Simulator v3 — Styles
    ============================================ */
 
 :root {
@@ -21,6 +21,7 @@
   --text-muted:     #475569;
   --highlight-elo:    rgba(59,130,246,0.12);
   --highlight-trophy: rgba(245,158,11,0.12);
+  --highlight-tier:   rgba(139,92,246,0.15);
   --rank-gold:   #fbbf24;
   --rank-silver: #94a3b8;
   --rank-bronze: #b45309;
@@ -445,4 +446,102 @@ body {
   color: var(--text-muted);
   margin-left: auto;
   padding-left: 16px;
+}
+
+/* ---- Safety Limits ---- */
+.safety-label {
+  margin-top: 24px;
+  color: var(--accent-green);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.safety-hint {
+  font-size: 11px; font-weight: 400; color: var(--text-muted);
+  text-transform: none; letter-spacing: 0;
+}
+.safety-grid { margin-bottom: 4px; }
+
+/* ---- Tier Config Section ---- */
+.tier-section-label {
+  margin-top: 24px;
+  color: var(--accent-gold);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.tier-section-hint {
+  font-size: 11px; font-weight: 400; color: var(--text-muted);
+  text-transform: none; letter-spacing: 0;
+}
+.tier-config-table-wrap {
+  overflow-x: auto; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); margin-bottom: 10px;
+}
+.tier-config-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tier-config-table thead tr { background: linear-gradient(135deg,#111827,#1a2035); }
+.tier-config-table th {
+  padding: 11px 12px; text-align: left; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.th-hint { font-weight: 400; font-size: 10px; color: var(--text-muted); text-transform: none; letter-spacing: 0; }
+.tier-config-table td { padding: 7px 10px; border-bottom: 1px solid rgba(30,45,69,0.5); vertical-align: middle; }
+.tier-config-table tbody tr:last-child td { border-bottom: none; }
+.tier-config-table tbody tr:hover { background: var(--bg-card-hover); }
+.tier-name-input {
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--text-primary); font-size: 13px;
+  font-weight: 700; padding: 6px 10px; width: 130px; outline: none;
+  font-family: var(--font); transition: all var(--transition);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.tier-num-input {
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 5px; color: var(--accent-gold); font-size: 13px;
+  font-weight: 700; padding: 6px 8px; width: 80px; outline: none;
+  font-family: var(--font); transition: all var(--transition);
+}
+.tier-name-input:focus, .tier-num-input:focus {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px var(--accent-gold-glow);
+}
+.btn-remove-tier {
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25);
+  color: var(--accent-red); font-size: 12px; font-weight: 700;
+  padding: 4px 10px; border-radius: 5px; cursor: pointer;
+  transition: all var(--transition); font-family: var(--font);
+}
+.btn-remove-tier:hover { background: rgba(239,68,68,0.2); border-color: var(--accent-red); }
+.tier-actions { margin-bottom: 24px; }
+.btn-add-tier {
+  background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.3);
+  color: var(--accent-gold); font-size: 13px; font-weight: 700;
+  padding: 8px 18px; border-radius: var(--radius-sm); cursor: pointer;
+  transition: all var(--transition); font-family: var(--font);
+}
+.btn-add-tier:hover {
+  background: rgba(245,158,11,0.2); border-color: var(--accent-gold);
+  transform: translateY(-1px);
+}
+
+/* ---- Tier Badge (results table & player card) ---- */
+.tier-badge {
+  display: inline-block; font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 20px;
+  background: rgba(245,158,11,0.12); color: var(--accent-gold);
+  border: 1px solid rgba(245,158,11,0.3);
+}
+.player-tier-select {
+  background: var(--bg-input); border: 1px solid rgba(245,158,11,0.35);
+  border-radius: var(--radius-sm); color: var(--accent-gold);
+  font-size: 13px; font-weight: 700; padding: 9px 32px 9px 13px;
+  outline: none; width: 100%; font-family: var(--font);
+  transition: all var(--transition);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23f59e0b' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+}
+.player-tier-select:focus { border-color: var(--accent-gold); box-shadow: 0 0 0 3px var(--accent-gold-glow); }
+
+/* ---- Tier Trophy Column ---- */
+.results-table th.tier-trophy-col { color: var(--accent-purple); }
+.results-table td.tier-trophy-cell {
+  background: var(--highlight-tier);
+  font-weight: 700; font-size: 14px;
 }

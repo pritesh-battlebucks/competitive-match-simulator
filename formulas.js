@@ -1,36 +1,29 @@
 function applyRound(value, mode) {
   switch (mode) {
     case 'FLOOR': return Math.floor(value);
-    case 'CEIL': return Math.ceil(value);
+    case 'CEIL':  return Math.ceil(value);
     case 'NEAREST':
-    default: return Math.round(value);
+    default:      return Math.round(value);
   }
 }
 
 function getRankRewardConfig(rankConfigs, rank) {
-  return rankConfigs.find(r => r.rank === rank) ?? {
-    rank,
-    poolSharePercent: 0,
-    bonusAmount: 0,
-    bonusTrophies: 0,
-  };
+  return rankConfigs.find(r => r.rank === rank) ?? { rank, poolSharePercent: 0, bonusAmount: 0, bonusTrophies: 0 };
 }
 
 function assignRanks(players) {
   const n = players.length;
-  const completed = players.filter(p => p.matchStatus === 'COMPLETED');
+  const completed    = players.filter(p => p.matchStatus === 'COMPLETED');
   const nonCompleted = players.filter(p => p.matchStatus !== 'COMPLETED');
   const sorted = [...completed].sort((a, b) => b.matchScore - a.matchScore);
-
   const rankedCompleted = [];
   let nextRank = 1;
   for (let i = 0; i < sorted.length; i++) {
-    const sameAsPrev = i > 0 && sorted[i].matchScore === sorted[i - 1].matchScore;
+    const sameAsPrev  = i > 0 && sorted[i].matchScore === sorted[i - 1].matchScore;
     const assignedRank = sameAsPrev ? rankedCompleted[i - 1].rank : nextRank;
     rankedCompleted.push({ ...sorted[i], rank: assignedRank });
     nextRank++;
   }
-
   const rankedNonCompleted = nonCompleted.map(p => ({ ...p, rank: n }));
   return [...rankedCompleted, ...rankedNonCompleted];
 }
@@ -88,39 +81,52 @@ function isFullTie(players) {
 }
 
 function computeRankRewards(startRank, groupSize, rankConfigs, distributablePool) {
-  let sumPoolPct = 0;
-  let sumBonusAmount = 0;
-  let sumBonusTrophies = 0;
-
+  let sumPoolPct = 0, sumBonusAmount = 0, sumBonusTrophies = 0;
   for (let slot = startRank; slot < startRank + groupSize; slot++) {
     const rc = getRankRewardConfig(rankConfigs, slot);
-    sumPoolPct += rc.poolSharePercent;
-    sumBonusAmount += rc.bonusAmount;
+    sumPoolPct      += rc.poolSharePercent;
+    sumBonusAmount  += rc.bonusAmount;
     sumBonusTrophies += rc.bonusTrophies;
   }
-
   return {
-    poolAmount: Math.floor((distributablePool * sumPoolPct) / 100 / groupSize),
-    bonusAmount: Math.floor(sumBonusAmount / groupSize),
+    poolAmount:    Math.floor((distributablePool * sumPoolPct) / 100 / groupSize),
+    bonusAmount:   Math.floor(sumBonusAmount / groupSize),
     bonusTrophies: Math.round(sumBonusTrophies / groupSize),
   };
 }
 
 function computeFullTieRewards(rankConfigs, distributablePool, n) {
-  const totalBonusAmount = rankConfigs.reduce((s, r) => s + r.bonusAmount, 0);
+  const totalBonusAmount   = rankConfigs.reduce((s, r) => s + r.bonusAmount, 0);
   const totalBonusTrophies = rankConfigs.reduce((s, r) => s + r.bonusTrophies, 0);
   return {
-    poolAmount: Math.floor(distributablePool / n),
-    bonusAmount: Math.floor(totalBonusAmount / n),
+    poolAmount:    Math.floor(distributablePool / n),
+    bonusAmount:   Math.floor(totalBonusAmount / n),
     bonusTrophies: Math.round(totalBonusTrophies / n),
   };
+}
+
+// Apply tier multiplier: positive multiplier on gains, negative multiplier on losses
+function applyTierMultiplier(formulaDelta, tier) {
+  if (!tier) return formulaDelta;
+  if (formulaDelta >= 0) return formulaDelta * (tier.positiveMultiplier ?? 1);
+  return formulaDelta * (tier.negativeMultiplier ?? 1);
+}
+
+// Clamp by safety limits
+function applySafetyLimit(value, safetyConfig) {
+  if (!safetyConfig) return value;
+  const maxGain = Math.abs(safetyConfig.maxGain ?? Infinity);
+  const maxLoss = Math.abs(safetyConfig.maxLoss ?? Infinity);
+  if (value > maxGain)  return maxGain;
+  if (value < -maxLoss) return -maxLoss;
+  return value;
 }
 
 function resolveMatch(playerInputs, config) {
   if (playerInputs.length < 2) throw new Error('A match requires at least 2 players');
 
   const n = playerInputs.length;
-  const { baseConfig, eloConfig, trophyConfig, rankConfig } = config;
+  const { baseConfig, eloConfig, trophyConfig, rankConfig, tiers, safetyConfig } = config;
   const rankedPlayers = assignRanks(playerInputs);
   const fullTie = isFullTie(playerInputs);
 
@@ -132,22 +138,14 @@ function resolveMatch(playerInputs, config) {
 
   const rawById = new Map();
   for (const player of rankedPlayers) {
-    const opponentElos = rankedPlayers.filter(p => p.playerId !== player.playerId).map(p => p.currentElo);
-    const actualScore = calculateActualScore(player.rank, n);
-    const expectedScore = calculateExpectedScore(player.currentElo, opponentElos, eloConfig.scalingFactor);
-    const eloDelta = applyRound(calculateEloDelta(actualScore, expectedScore, eloConfig.kFactor), eloConfig.roundMode);
-    const winTrophy = calculateWinTrophy(expectedScore, trophyConfig);
-    const lossTrophy = calculateLossTrophy(expectedScore, trophyConfig);
+    const opponentElos    = rankedPlayers.filter(p => p.playerId !== player.playerId).map(p => p.currentElo);
+    const actualScore     = calculateActualScore(player.rank, n);
+    const expectedScore   = calculateExpectedScore(player.currentElo, opponentElos, eloConfig.scalingFactor);
+    const eloDelta        = applyRound(calculateEloDelta(actualScore, expectedScore, eloConfig.kFactor), eloConfig.roundMode);
+    const winTrophy       = calculateWinTrophy(expectedScore, trophyConfig);
+    const lossTrophy      = calculateLossTrophy(expectedScore, trophyConfig);
     const formulaTrophyDelta = blendTrophyByActualScore(actualScore, winTrophy, lossTrophy, trophyConfig.roundMode);
-
-    rawById.set(player.playerId, {
-      actualScore,
-      expectedScore,
-      eloDelta,
-      winTrophy,
-      lossTrophy,
-      formulaTrophyDelta,
-    });
+    rawById.set(player.playerId, { actualScore, expectedScore, eloDelta, winTrophy, lossTrophy, formulaTrophyDelta });
   }
 
   const trophyDeltaByRank = new Map();
@@ -156,21 +154,28 @@ function resolveMatch(playerInputs, config) {
     trophyDeltaByRank.set(rank, highest);
   }
 
-  const grossPool = baseConfig.entryFee * n;
-  const rakeAmount = fullTie ? 0 : Math.floor(grossPool * baseConfig.rakePercent / 100);
+  const grossPool        = baseConfig.entryFee * n;
+  const rakeAmount       = fullTie ? 0 : Math.floor(grossPool * baseConfig.rakePercent / 100);
   const distributablePool = grossPool - rakeAmount;
 
   return playerInputs.map(input => {
-    const ranked = rankedPlayers.find(p => p.playerId === input.playerId);
-    const raw = rawById.get(input.playerId);
+    const ranked    = rankedPlayers.find(p => p.playerId === input.playerId);
+    const raw       = rawById.get(input.playerId);
     const groupSize = rankGroups.get(ranked.rank).length;
+    const eloDelta  = fullTie ? 0 : raw.eloDelta;
 
-    const eloDelta = fullTie ? 0 : raw.eloDelta;
-
+    // Step 1: formula trophy (base)
     let formulaTrophyFinal;
-    if (fullTie) formulaTrophyFinal = trophyConfig.tieTrophies;
+    if (fullTie)           formulaTrophyFinal = trophyConfig.tieTrophies;
     else if (groupSize > 1) formulaTrophyFinal = trophyDeltaByRank.get(ranked.rank);
-    else formulaTrophyFinal = raw.formulaTrophyDelta;
+    else                    formulaTrophyFinal = raw.formulaTrophyDelta;
+
+    // Step 2: apply tier multiplier
+    const tier = (tiers || []).find(t => t.name === input.tierName) ?? null;
+    const afterMultiplier = applyTierMultiplier(formulaTrophyFinal, tier);
+
+    // Step 3: apply safety limits → this is the tierTrophyDelta shown in the new column
+    const tierTrophyDelta = applyRound(applySafetyLimit(afterMultiplier, safetyConfig), trophyConfig.roundMode);
 
     const rewards = fullTie
       ? computeFullTieRewards(rankConfig, distributablePool, n)
@@ -179,30 +184,32 @@ function resolveMatch(playerInputs, config) {
     return {
       playerId: input.playerId,
       matchStatus: input.matchStatus,
-      matchScore: input.matchScore,
-      rank: ranked.rank,
+      matchScore:  input.matchScore,
+      tierName:    input.tierName || '—',
+      rank:        ranked.rank,
 
-      oldElo: input.currentElo,
-      actualScore: raw.actualScore,
+      oldElo:        input.currentElo,
+      actualScore:   raw.actualScore,
       expectedScore: raw.expectedScore,
       eloDelta,
-      newElo: input.currentElo + eloDelta,
+      newElo:        input.currentElo + eloDelta,
 
-      oldTrophies: input.currentTrophies,
-      winTrophy: raw.winTrophy,
-      lossTrophy: raw.lossTrophy,
+      oldTrophies:      input.currentTrophies,
+      winTrophy:        raw.winTrophy,
+      lossTrophy:       raw.lossTrophy,
       formulaTrophyDelta: formulaTrophyFinal,
-      bonusTrophies: rewards.bonusTrophies,
-      newTrophies: input.currentTrophies + formulaTrophyFinal + rewards.bonusTrophies,
+      tierTrophyDelta,
+      bonusTrophies:    rewards.bonusTrophies,
+      newTrophies:      input.currentTrophies + tierTrophyDelta + rewards.bonusTrophies,
 
-      poolAmount: rewards.poolAmount,
+      poolAmount:  rewards.poolAmount,
       bonusAmount: rewards.bonusAmount,
       totalAmount: rewards.poolAmount + rewards.bonusAmount,
 
-      currency: baseConfig.currency,
-      entryFee: baseConfig.entryFee,
+      currency:          baseConfig.currency,
+      entryFee:          baseConfig.entryFee,
       grossPool,
-      rakePercent: baseConfig.rakePercent,
+      rakePercent:       baseConfig.rakePercent,
       rakeAmount,
       distributablePool,
     };
@@ -215,26 +222,18 @@ function resolveDrawMatch(playerInputs, config) {
     playerId: input.playerId,
     matchStatus: input.matchStatus,
     matchScore: input.matchScore,
+    tierName: input.tierName || '—',
     rank: n,
     oldElo: input.currentElo,
-    actualScore: 0,
-    expectedScore: 0,
-    eloDelta: 0,
-    newElo: input.currentElo,
+    actualScore: 0, expectedScore: 0, eloDelta: 0, newElo: input.currentElo,
     oldTrophies: input.currentTrophies,
-    winTrophy: 0,
-    lossTrophy: 0,
-    formulaTrophyDelta: 0,
-    bonusTrophies: 0,
-    newTrophies: input.currentTrophies,
-    poolAmount: 0,
-    bonusAmount: 0,
-    totalAmount: 0,
+    winTrophy: 0, lossTrophy: 0,
+    formulaTrophyDelta: 0, tierTrophyDelta: 0,
+    bonusTrophies: 0, newTrophies: input.currentTrophies,
+    poolAmount: 0, bonusAmount: 0, totalAmount: 0,
     currency: config?.baseConfig?.currency ?? 'COINS',
     entryFee: config?.baseConfig?.entryFee ?? 0,
-    grossPool: 0,
-    rakePercent: config?.baseConfig?.rakePercent ?? 0,
-    rakeAmount: 0,
-    distributablePool: 0,
+    grossPool: 0, rakePercent: config?.baseConfig?.rakePercent ?? 0,
+    rakeAmount: 0, distributablePool: 0,
   }));
 }
