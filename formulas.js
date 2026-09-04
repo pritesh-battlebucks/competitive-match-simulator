@@ -13,8 +13,9 @@ function getRankRewardConfig(rankConfigs, rank) {
 
 function assignRanks(players) {
   const n = players.length;
-  const completed    = players.filter(p => p.matchStatus === 'COMPLETED');
-  const nonCompleted = players.filter(p => p.matchStatus !== 'COMPLETED');
+  // Players with score 0 are treated exactly like ABANDONED/FORFEITED — forced to last rank
+  const completed    = players.filter(p => p.matchStatus === 'COMPLETED' && p.matchScore !== 0);
+  const nonCompleted = players.filter(p => p.matchStatus !== 'COMPLETED' || p.matchScore === 0);
   const sorted = [...completed].sort((a, b) => b.matchScore - a.matchScore);
   const rankedCompleted = [];
   let nextRank = 1;
