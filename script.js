@@ -245,7 +245,7 @@ function renderResults(results, meta) {
       <td>${r.expectedScore.toFixed(4)}</td>
       <td class="elo-change-cell"><span class="${eloClass}">${formatDelta(r.eloDelta)}</span></td>
       <td>${r.newElo}</td>
-      <td class="trophy-change-cell"><span class="${trophClass}">${formatDelta(r.formulaTrophyDelta)}</span></td>
+      <td class="trophy-change-cell"><span class="${trophClass}">${r.formulaTrophyDelta >= 0 ? '+' : ''}${r.formulaTrophyDelta.toFixed(4)}</span></td>
       <td class="tier-trophy-cell"><span class="${tierClass}">${formatDelta(r.tierTrophyDelta)}</span></td>
       <td>${r.bonusTrophies > 0 ? `<span class="val-positive">+${r.bonusTrophies}</span>` : '<span class="val-zero">0</span>'}</td>
       <td>${r.newTrophies}</td>

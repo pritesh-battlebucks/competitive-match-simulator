@@ -68,9 +68,8 @@ function calculateLossTrophy(expectedScore, trophyConfig) {
   return midNegative - pct * (midNegative - maxNegative);
 }
 
-function blendTrophyByActualScore(actualScore, winTrophy, lossTrophy, roundMode = 'NEAREST') {
-  const raw = lossTrophy + actualScore * (winTrophy - lossTrophy);
-  return applyRound(raw, roundMode);
+function blendTrophyByActualScore(actualScore, winTrophy, lossTrophy) {
+  return lossTrophy + actualScore * (winTrophy - lossTrophy);
 }
 
 function isFullTie(players) {
@@ -144,7 +143,7 @@ function resolveMatch(playerInputs, config) {
     const eloDelta        = applyRound(calculateEloDelta(actualScore, expectedScore, eloConfig.kFactor), eloConfig.roundMode);
     const winTrophy       = calculateWinTrophy(expectedScore, trophyConfig);
     const lossTrophy      = calculateLossTrophy(expectedScore, trophyConfig);
-    const formulaTrophyDelta = blendTrophyByActualScore(actualScore, winTrophy, lossTrophy, trophyConfig.roundMode);
+    const formulaTrophyDelta = blendTrophyByActualScore(actualScore, winTrophy, lossTrophy);
     rawById.set(player.playerId, { actualScore, expectedScore, eloDelta, winTrophy, lossTrophy, formulaTrophyDelta });
   }
 
@@ -170,12 +169,13 @@ function resolveMatch(playerInputs, config) {
     else if (groupSize > 1) formulaTrophyFinal = trophyDeltaByRank.get(ranked.rank);
     else                    formulaTrophyFinal = raw.formulaTrophyDelta;
 
-    // Step 2: apply tier multiplier
+    // Step 2: apply tier multiplier (on raw decimal, before rounding)
     const tier = (tiers || []).find(t => t.name === input.tierName) ?? null;
     const afterMultiplier = applyTierMultiplier(formulaTrophyFinal, tier);
 
-    // Step 3: apply safety limits → this is the tierTrophyDelta shown in the new column
-    const tierTrophyDelta = applyRound(applySafetyLimit(afterMultiplier, safetyConfig), trophyConfig.roundMode);
+    // Step 3: round AFTER multiplier, then apply safety limits
+    const rounded = applyRound(afterMultiplier, trophyConfig.roundMode);
+    const tierTrophyDelta = applySafetyLimit(rounded, safetyConfig);
 
     const rewards = fullTie
       ? computeFullTieRewards(rankConfig, distributablePool, n)
